@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VenTheme — Discord Theme Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0c0c0e;--surface:#111115;--surface2:#18181e;--surface3:#202028;--surface4:#28282f;
+  --border:#252530;--border2:#333340;
+  --accent:#5865f2;--accent-dim:#4752c4;--accent-glow:rgba(88,101,242,0.2);
+  --green:#3ba55c;--red:#ed4245;--yellow:#faa61a;--cyan:#00b0f4;
+  --text:#e2e2ee;--text2:#8888aa;--text3:#44445a;
+  --mono:'JetBrains Mono',monospace;--sans:'Syne',sans-serif;--radius:8px;
+}
+html{font-size:14px;scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");opacity:0.5}
+
+/* HEADER */
+header{position:sticky;top:0;z-index:200;height:52px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 clamp(12px,3vw,28px);background:rgba(12,12,14,0.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.logo{font-family:var(--sans);font-size:1.1rem;font-weight:800;letter-spacing:-0.04em;display:flex;align-items:center;gap:9px;user-select:none}
+.logo-icon{width:26px;height:26px;background:var(--accent);border-radius:6px;display:grid;place-items:center;font-size:0.7rem;color:#fff;
+  box-shadow:0 0 14px var(--accent-glow);animation:breathe 3s ease-in-out infinite}
+@keyframes breathe{0%,100%{box-shadow:0 0 14px var(--accent-glow)}50%{box-shadow:0 0 26px rgba(88,101,242,0.4)}}
+.logo span{color:var(--accent)}
+.hdr-r{display:flex;align-items:center;gap:7px}
+.btn{font-family:var(--mono);font-size:0.7rem;padding:6px 13px;border-radius:var(--radius);border:1px solid var(--border2);
+  background:var(--surface2);color:var(--text2);cursor:pointer;transition:all 0.15s;white-space:nowrap}
+.btn:hover{border-color:var(--accent);color:var(--text);background:var(--surface3)}
+.btn.p{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.p:hover{background:var(--accent-dim);border-color:var(--accent-dim)}
+.btn.g{background:transparent}
+.btn.sm{padding:4px 10px;font-size:0.65rem}
+
+/* HERO */
+.hero{position:relative;z-index:1;text-align:center;padding:clamp(40px,6vw,68px) clamp(16px,5vw,40px) clamp(32px,5vw,52px);overflow:hidden}
+.hero-grid{position:absolute;inset:0;z-index:0;
+  background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);
+  background-size:40px 40px;mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,black 40%,transparent 100%);opacity:0.35}
+.hero-glow{position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:600px;height:300px;
+  background:radial-gradient(ellipse,rgba(88,101,242,0.13) 0%,transparent 70%);pointer-events:none}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:16px;border:1px solid rgba(88,101,242,0.3);padding:3px 12px;border-radius:20px;
+  background:rgba(88,101,242,0.07);animation:fu 0.5s ease both}
+.hero h1{font-family:var(--sans);font-size:clamp(1.8rem,5.5vw,3.4rem);font-weight:800;line-height:1.05;
+  letter-spacing:-0.04em;margin-bottom:14px;animation:fu 0.5s 0.08s ease both}
+.hero h1 em{font-style:normal;color:var(--accent);text-shadow:0 0 40px var(--accent-glow)}
+.hero p{font-size:clamp(0.76rem,1.5vw,0.9rem);color:var(--text2);max-width:500px;margin:0 auto 26px;line-height:1.8;animation:fu 0.5s 0.16s ease both}
+.ctas{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;animation:fu 0.5s 0.24s ease both}
+@keyframes fu{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+/* EDITOR TABS */
+.etabs{position:relative;z-index:1;display:flex;gap:2px;padding:0 clamp(12px,3vw,24px);margin-bottom:-1px}
+.etab{font-family:var(--mono);font-size:0.66rem;padding:7px 15px;border-radius:6px 6px 0 0;
+  border:1px solid transparent;cursor:pointer;color:var(--text3);transition:all 0.15s;background:transparent;letter-spacing:0.03em}
+.etab.a{background:var(--surface);border-color:var(--border);border-bottom-color:var(--surface);color:var(--text)}
+.etab:hover:not(.a){color:var(--text2)}
+
+/* APP SHELL */
+.shell{position:relative;z-index:1;display:grid;grid-template-columns:265px 1fr 285px;
+  min-height:560px;border:1px solid var(--border);border-radius:0 var(--radius) var(--radius) var(--radius);
+  margin:0 clamp(12px,3vw,24px) 40px;overflow:hidden;background:var(--surface)}
+@media(max-width:1100px){.shell{grid-template-columns:225px 1fr;grid-template-rows:1fr auto}.css-panel{grid-column:1/-1;border-top:1px solid var(--border);border-left:none}}
+@media(max-width:680px){.shell{grid-template-columns:1fr;min-height:auto}}
+
+.plabel{font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);
+  padding:9px 13px 7px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.plabel .hl{color:var(--accent)}
+
+/* CONTROLS */
+.ctrl-panel{background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
+.cs{border-bottom:1px solid var(--border)}
+.ch{padding:9px 13px;font-size:0.62rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);
+  cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;transition:background 0.1s}
+.ch:hover{background:var(--surface2)}
+.ch .ar{transition:transform 0.2s;font-size:0.55rem;color:var(--text3)}
+.ch.o .ar{transform:rotate(90deg)}
+.cb{padding:11px 13px;display:none;flex-direction:column;gap:10px}
+.cb.o{display:flex}
+.cr{display:flex;flex-direction:column;gap:4px}
+.cr label{font-size:0.61rem;color:var(--text2);letter-spacing:0.03em}
+
+input[type=color]{width:30px;height:26px;border:1px solid var(--border2);border-radius:5px;background:none;cursor:pointer;padding:2px}
+.hi{flex:1;background:var(--surface3);border:1px solid var(--border);border-radius:5px;padding:5px 7px;
+  font-family:var(--mono);font-size:0.67rem;color:var(--text);outline:none;transition:border-color 0.15s}
+.hi:focus{border-color:var(--accent)}
+.crow{display:flex;align-items:center;gap:7px}
+
+input[type=range]{flex:1;-webkit-appearance:none;height:3px;border-radius:2px;background:var(--surface3);outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--accent);border:2px solid var(--bg);cursor:pointer;box-shadow:0 0 5px var(--accent-glow)}
+.rv{font-size:0.61rem;color:var(--text3);min-width:33px;text-align:right}
+
+.csel{width:100%;background:var(--surface3);border:1px solid var(--border);border-radius:5px;
+  padding:5px 7px;font-family:var(--mono);font-size:0.67rem;color:var(--text);outline:none;cursor:pointer;transition:border-color 0.15s}
+.csel:focus{border-color:var(--accent)}
+.csel option{background:var(--surface3)}
+
+.trow{display:flex;align-items:center;justify-content:space-between}
+.tog{position:relative;width:34px;height:18px;cursor:pointer;flex-shrink:0}
+.tog input{display:none}
+.tt{position:absolute;inset:0;background:var(--surface4);border-radius:9px;transition:background 0.2s;border:1px solid var(--border2)}
+.tog input:checked~.tt{background:var(--accent);border-color:var(--accent)}
+.tb{position:absolute;top:2px;left:2px;width:14px;height:14px;background:#fff;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.3)}
+.tog input:checked~.tb{transform:translateX(16px)}
+
+/* IMAGE UPLOAD */
+.upbtn{width:100%;padding:9px;border:1px dashed var(--border2);border-radius:6px;background:var(--surface2);
+  color:var(--text2);font-family:var(--mono);font-size:0.67rem;cursor:pointer;text-align:center;transition:all 0.15s}
+.upbtn:hover{border-color:var(--accent);color:var(--accent);background:rgba(88,101,242,0.06)}
+#bg-thumb{width:100%;height:58px;border-radius:5px;object-fit:cover;border:1px solid var(--border);display:none;margin-top:5px}
+#bg-clear{font-size:0.61rem;color:var(--red);cursor:pointer;text-align:right;display:none;margin-top:3px}
+#bg-clear:hover{text-decoration:underline}
+#bg-file{display:none}
+
+/* PRESETS */
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.pp{padding:7px 9px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);
+  font-family:var(--mono);font-size:0.63rem;color:var(--text2);cursor:pointer;transition:all 0.15s;text-align:left}
+.pp:hover{border-color:var(--accent);color:var(--text);background:var(--surface3)}
+
+/* PREVIEW */
+.prev-panel{display:flex;flex-direction:column;overflow:hidden;background:var(--surface)}
+.prev-tb{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--border);background:var(--surface2);flex-shrink:0}
+.pdots{display:flex;gap:5px}
+.pdots span{width:9px;height:9px;border-radius:50%}
+.dr{background:var(--red)}.dy{background:var(--yellow)}.dg{background:var(--green)}
+.ptitle{flex:1;text-align:center;font-size:0.61rem;color:var(--text3);letter-spacing:0.04em}
+.pvp{flex:1;overflow:hidden;display:flex;min-height:390px}
+
+/* DISCORD MOCK */
+.dcm{width:100%;display:flex;transition:all 0.2s ease;overflow:hidden}
+.dcg{width:50px;min-width:50px;display:flex;flex-direction:column;align-items:center;gap:7px;padding:9px 0;overflow-y:auto;flex-shrink:0}
+.dgi{width:33px;height:33px;border-radius:50%;display:grid;place-items:center;font-size:0.6rem;font-weight:700;cursor:pointer;transition:border-radius 0.2s;flex-shrink:0}
+.dgi:hover,.dgi.a{border-radius:11px}
+.dcsb{display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;transition:all 0.25s}
+.dsvr{padding:10px 11px;font-size:0.7rem;font-weight:700;border-bottom:1px solid rgba(255,255,255,0.06);cursor:pointer;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.dchs{flex:1;overflow-y:auto;padding:5px 0}
+.dcat{padding:5px 10px 2px;font-size:0.57rem;letter-spacing:0.08em;text-transform:uppercase;opacity:0.4;user-select:none}
+.dch{display:flex;align-items:center;gap:5px;padding:4px 9px;border-radius:4px;margin:1px 5px;cursor:pointer;font-size:0.67rem;opacity:0.6;transition:all 0.1s}
+.dch:hover{opacity:0.9}
+.dch.a{opacity:1}
+.dub{padding:7px 9px;display:flex;align-items:center;gap:7px;border-top:1px solid rgba(255,255,255,0.06);flex-shrink:0}
+.dava{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:0.6rem;font-weight:700;flex-shrink:0;transition:border-radius 0.25s}
+.dun{font-size:0.67rem;font-weight:700}
+.dtag{font-size:0.57rem;opacity:0.45}
+.dcmain{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.dcch{padding:9px 13px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:7px;flex-shrink:0;position:relative;z-index:2}
+.dcch .n{font-weight:700;font-size:0.73rem}
+.dcch .d{font-size:0.61rem;opacity:0.45}
+.dcmgs{flex:1;overflow-y:auto;padding:13px;display:flex;flex-direction:column;gap:9px;position:relative;z-index:1}
+.dcbg{position:absolute;inset:0;z-index:0;background-size:cover;background-position:center;transition:all 0.3s}
+.dcmsg{display:flex;gap:9px;position:relative;z-index:1;transition:padding 0.2s}
+.dcmav{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;font-size:0.67rem;font-weight:700;transition:border-radius 0.25s}
+.dcmhdr{display:flex;align-items:baseline;gap:7px;margin-bottom:2px}
+.dcmn{font-weight:700;font-size:0.71rem}
+.dcmt2{font-size:0.57rem;opacity:0.3}
+.dcmtxt{font-size:0.69rem;line-height:1.55;opacity:0.85}
+.dcmtxt code{padding:1px 4px;border-radius:3px;font-size:0.64rem}
+.dcinp{padding:9px 13px;flex-shrink:0;position:relative;z-index:2}
+.dcinpb{border-radius:8px;padding:8px 12px;font-size:0.69rem;display:flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,0.05)}
+.dcinph{opacity:0.3;flex:1}
+.dcinpi{display:flex;gap:8px;opacity:0.35;font-size:0.77rem}
+.dcm.compact .dcmgs{gap:2px}
+.dcm.compact .dcmav{width:0;overflow:hidden;opacity:0;margin:0;padding:0}
+.dcm.bubble .dcmtxt{background:rgba(255,255,255,0.07);padding:6px 10px;border-radius:12px;display:inline-block}
+
+/* CSS PANEL */
+.css-panel{background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.css-ed{flex:1;overflow:hidden}
+.csta{width:100%;height:100%;min-height:240px;background:transparent;border:none;outline:none;resize:none;
+  font-family:var(--mono);font-size:0.67rem;color:var(--cyan);line-height:1.8;padding:11px 13px;tab-size:2}
+.csta::selection{background:rgba(88,101,242,0.3)}
+.csacts{padding:9px 11px;border-top:1px solid var(--border);display:flex;gap:7px;flex-wrap:wrap}
+
+/* FEATURES */
+.features{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:clamp(36px,5vw,72px) clamp(16px,4vw,32px)}
+.slabel{font-size:0.58rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.slabel::after{content:'';flex:1;height:1px;background:var(--border);max-width:70px}
+.stitle{font-family:var(--sans);font-size:clamp(1.25rem,2.6vw,1.8rem);font-weight:800;letter-spacing:-0.03em;margin-bottom:32px;line-height:1.15}
+.stitle span{color:var(--accent)}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.fcard{background:var(--surface);padding:20px;transition:background 0.2s}
+.fcard:hover{background:var(--surface2)}
+.ficon{width:32px;height:32px;border-radius:7px;background:var(--surface3);border:1px solid var(--border2);display:grid;place-items:center;font-size:0.95rem;margin-bottom:11px}
+.ftitle{font-family:var(--sans);font-weight:700;font-size:0.86rem;letter-spacing:-0.02em;margin-bottom:6px}
+.fdesc{font-size:0.68rem;color:var(--text2);line-height:1.7}
+
+/* HOW TO */
+.howto{position:relative;z-index:1;max-width:740px;margin:0 auto;padding:0 clamp(16px,4vw,32px) clamp(52px,7vw,88px)}
+.steps{display:flex;flex-direction:column}
+.step{display:flex;gap:17px;padding:20px 0;border-bottom:1px solid var(--border)}
+.step:last-child{border-bottom:none}
+.snum{font-family:var(--sans);font-size:1.7rem;font-weight:800;color:var(--border2);line-height:1;flex-shrink:0;width:42px;letter-spacing:-0.05em}
+.steptitle{font-family:var(--sans);font-weight:700;font-size:0.9rem;margin-bottom:5px;letter-spacing:-0.02em}
+.stepdesc{font-size:0.69rem;color:var(--text2);line-height:1.7}
+.stepcode{margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:0.67rem;color:var(--cyan);overflow-x:auto}
+
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:18px clamp(16px,4vw,32px);
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.ftl{font-size:0.61rem;color:var(--text3);line-height:1.6}
+.ftl a{color:var(--accent);text-decoration:none}
+.ftr{display:flex;gap:13px}
+.ftlink{font-size:0.61rem;color:var(--text3);text-decoration:none;transition:color 0.15s}
+.ftlink:hover{color:var(--text)}
+
+.toast{position:fixed;bottom:20px;right:20px;z-index:9999;background:var(--surface3);border:1px solid var(--border2);
+  border-radius:var(--radius);padding:10px 15px;font-size:0.69rem;color:var(--text);
+  box-shadow:0 8px 32px rgba(0,0,0,0.4);transform:translateY(70px);opacity:0;
+  transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);display:flex;align-items:center;gap:9px;max-width:250px}
+.toast.s{transform:translateY(0);opacity:1}
+
+.moverlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.72);backdrop-filter:blur(6px);display:none;place-items:center;padding:16px}
+.moverlay.o{display:grid}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:11px;padding:24px;max-width:450px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,0.5);animation:fu 0.3s ease}
+.modal h2{font-family:var(--sans);font-weight:700;font-size:1.02rem;letter-spacing:-0.03em;margin-bottom:7px}
+.modal p{font-size:0.7rem;color:var(--text2);line-height:1.7;margin-bottom:16px}
+.mcode{background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:12px;font-size:0.65rem;color:var(--cyan);
+  white-space:pre-wrap;word-break:break-all;max-height:220px;overflow-y:auto;margin-bottom:13px;line-height:1.7}
+.macts{display:flex;gap:7px;justify-content:flex-end}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><div class="logo-icon">V</div><div>Ven<span>Theme</span></div></div>
+  <div class="hdr-r">
+    <button class="btn g sm" onclick="resetAll()">Reset</button>
+    <button class="btn g sm" onclick="openModal()">Export CSS</button>
+    <button class="btn p sm" onclick="downloadCSS()">↓ Download</button>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-grid"></div><div class="hero-glow"></div>
+  <div style="position:relative;z-index:1">
+    <div class="eyebrow">✦ Vencord Theme Editor</div>
+    <h1>Design your<br><em>Discord</em> look.</h1>
+    <p>Customize colors, fonts, layouts, upload backgrounds from your device — export straight into Vencord.</p>
+    <div class="ctas">
+      <button class="btn p" onclick="document.querySelector('.etabs').scrollIntoView({behavior:'smooth'})">Open Editor ↓</button>
+      <button class="btn" onclick="loadPreset('midnight')">🌑 Midnight</button>
+      <button class="btn" onclick="loadPreset('sakura')">🌸 Sakura</button>
+      <button class="btn" onclick="loadPreset('hacker')">💻 Hacker</button>
+      <button class="btn" onclick="loadPreset('nord')">❄️ Nord</button>
+    </div>
+  </div>
+</section>
+
+<div class="etabs">
+  <div class="etab a" onclick="switchTab(this,'editor')">Editor</div>
+  <div class="etab" onclick="switchTab(this,'css')">Custom CSS</div>
+</div>
+
+<div class="shell">
+  <!-- CONTROLS -->
+  <div class="ctrl-panel" id="tab-editor">
+    <div class="plabel">// <span class="hl">theme.controls</span></div>
+
+    <!-- PRESETS -->
+    <div class="cs">
+      <div class="ch o" onclick="tog(this)">Presets <span class="ar">▶</span></div>
+      <div class="cb o">
+        <div class="pgrid">
+          <button class="pp" onclick="loadPreset('default')">◉ Default</button>
+          <button class="pp" onclick="loadPreset('midnight')">🌑 Midnight</button>
+          <button class="pp" onclick="loadPreset('sakura')">🌸 Sakura</button>
+          <button class="pp" onclick="loadPreset('hacker')">💻 Hacker</button>
+          <button class="pp" onclick="loadPreset('ocean')">🌊 Ocean</button>
+          <button class="pp" onclick="loadPreset('sunset')">🌇 Sunset</button>
+          <button class="pp" onclick="loadPreset('nord')">❄️ Nord</button>
+          <button class="pp" onclick="loadPreset('dracula')">🧛 Dracula</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLORS -->
+    <div class="cs">
+      <div class="ch o" onclick="tog(this)">Colors <span class="ar">▶</span></div>
+      <div class="cb o">
+        <div class="cr"><label>Background</label><div class="crow"><input type="color" id="c-bg" value="#313338" oninput="sc(this,'c-bg-h')" onchange="upd()"><input type="text" class="hi" id="c-bg-h" value="#313338" oninput="sh(this,'c-bg')" onchange="upd()"></div></div>
+        <div class="cr"><label>Sidebar</label><div class="crow"><input type="color" id="c-sb" value="#2b2d31" oninput="sc(this,'c-sb-h')" onchange="upd()"><input type="text" class="hi" id="c-sb-h" value="#2b2d31" oninput="sh(this,'c-sb')" onchange="upd()"></div></div>
+        <div class="cr"><label>Accent / Buttons</label><div class="crow"><input type="color" id="c-ac" value="#5865f2" oninput="sc(this,'c-ac-h')" onchange="upd()"><input type="text" class="hi" id="c-ac-h" value="#5865f2" oninput="sh(this,'c-ac')" onchange="upd()"></div></div>
+        <div class="cr"><label>Text</label><div class="crow"><input type="color" id="c-tx" value="#dbdee1" oninput="sc(this,'c-tx-h')" onchange="upd()"><input type="text" class="hi" id="c-tx-h" value="#dbdee1" oninput="sh(this,'c-tx')" onchange="upd()"></div></div>
+        <div class="cr"><label>Channel Active</label><div class="crow"><input type="color" id="c-ch" value="#404249" oninput="sc(this,'c-ch-h')" onchange="upd()"><input type="text" class="hi" id="c-ch-h" value="#404249" oninput="sh(this,'c-ch')" onchange="upd()"></div></div>
+        <div class="cr"><label>Message Input</label><div class="crow"><input type="color" id="c-in" value="#383a40" oninput="sc(this,'c-in-h')" onchange="upd()"><input type="text" class="hi" id="c-in-h" value="#383a40" oninput="sh(this,'c-in')" onchange="upd()"></div></div>
+        <div class="cr"><label>Link Color</label><div class="crow"><input type="color" id="c-lk" value="#00b0f4" oninput="sc(this,'c-lk-h')" onchange="upd()"><input type="text" class="hi" id="c-lk-h" value="#00b0f4" oninput="sh(this,'c-lk')" onchange="upd()"></div></div>
+        <div class="cr"><label>Mention Color</label><div class="crow"><input type="color" id="c-mn" value="#faa61a" oninput="sc(this,'c-mn-h')" onchange="upd()"><input type="text" class="hi" id="c-mn-h" value="#faa61a" oninput="sh(this,'c-mn')" onchange="upd()"></div></div>
+      </div>
+    </div>
+
+    <!-- TYPOGRAPHY -->
+    <div class="cs">
+      <div class="ch" onclick="tog(this)">Typography <span class="ar">▶</span></div>
+      <div class="cb">
+        <div class="cr"><label>Font Family</label>
+          <select class="csel" id="ff" onchange="upd()">
+            <option value="'gg sans','Noto Sans',sans-serif">gg sans (Default)</option>
+            <option value="'JetBrains Mono',monospace">JetBrains Mono</option>
+            <option value="'Fira Code',monospace">Fira Code</option>
+            <option value="'Outfit',sans-serif">Outfit</option>
+            <option value="Georgia,serif">Georgia</option>
+            <option value="'Comic Sans MS',cursive">Comic Sans</option>
+            <option value="system-ui,sans-serif">System UI</option>
+            <option value="'Courier New',monospace">Courier New</option>
+            <option value="Impact,fantasy">Impact</option>
+          </select></div>
+        <div class="cr"><label>Font Size</label><div class="crow"><input type="range" id="fsz" min="11" max="20" value="14" oninput="rvu(this,'fsz-v','px');upd()"><span class="rv" id="fsz-v">14px</span></div></div>
+        <div class="cr"><label>Font Weight</label>
+          <select class="csel" id="fw" onchange="upd()">
+            <option value="300">Light (300)</option>
+            <option value="400" selected>Regular (400)</option>
+            <option value="500">Medium (500)</option>
+            <option value="600">Semibold (600)</option>
+            <option value="700">Bold (700)</option>
+          </select></div>
+        <div class="cr"><label>Line Height</label><div class="crow"><input type="range" id="lh" min="10" max="22" value="14" oninput="rvd(this,'lh-v',10);upd()"><span class="rv" id="lh-v">1.4</span></div></div>
+        <div class="cr"><label>Letter Spacing</label><div class="crow"><input type="range" id="ls" min="-2" max="5" value="0" oninput="rvu(this,'ls-v','px');upd()"><span class="rv" id="ls-v">0px</span></div></div>
+      </div>
+    </div>
+
+    <!-- LAYOUT -->
+    <div class="cs">
+      <div class="ch" onclick="tog(this)">Layout <span class="ar">▶</span></div>
+      <div class="cb">
+        <div class="cr"><label>Message Style</label>
+          <select class="csel" id="ml" onchange="upd()">
+            <option value="cozy">Cozy (Default)</option>
+            <option value="compact">Compact</option>
+            <option value="bubble">Bubble</option>
+          </select></div>
+        <div class="cr"><label>Sidebar Width</label><div class="crow"><input type="range" id="sbw" min="120" max="280" value="200" oninput="rvu(this,'sbw-v','px');upd()"><span class="rv" id="sbw-v">200px</span></div></div>
+        <div class="cr"><label>Message Padding</label><div class="crow"><input type="range" id="msgp" min="2" max="20" value="8" oninput="rvu(this,'msgp-v','px');upd()"><span class="rv" id="msgp-v">8px</span></div></div>
+        <div class="cr"><div class="trow"><label>Hide Server List</label><label class="tog"><input type="checkbox" id="hg" onchange="upd()"><div class="tt"></div><div class="tb"></div></label></div></div>
+        <div class="cr"><div class="trow"><label>Hide Member List</label><label class="tog"><input type="checkbox" id="hm" onchange="upd()"><div class="tt"></div><div class="tb"></div></label></div></div>
+        <div class="cr"><div class="trow"><label>Hide Boost Bar</label><label class="tog"><input type="checkbox" id="hb" onchange="upd()"><div class="tt"></div><div class="tb"></div></label></div></div>
+      </div>
+    </div>
+
+    <!-- SHAPE -->
+    <div class="cs">
+      <div class="ch" onclick="tog(this)">Shape &amp; Borders <span class="ar">▶</span></div>
+      <div class="cb">
+        <div class="cr"><label>Border Radius</label><div class="crow"><input type="range" id="br" min="0" max="24" value="8" oninput="rvu(this,'br-v','px');upd()"><span class="rv" id="br-v">8px</span></div></div>
+        <div class="cr"><label>Avatar Shape</label><div class="crow"><input type="range" id="avr" min="0" max="50" value="50" oninput="rvu(this,'avr-v','%');upd()"><span class="rv" id="avr-v">50%</span></div></div>
+        <div class="cr"><div class="trow"><label>Show Border Lines</label><label class="tog"><input type="checkbox" id="sbord" onchange="upd()"><div class="tt"></div><div class="tb"></div></label></div></div>
+      </div>
+    </div>
+
+    <!-- BACKGROUND -->
+    <div class="cs">
+      <div class="ch" onclick="tog(this)">Background Image <span class="ar">▶</span></div>
+      <div class="cb">
+        <div class="cr"><label>Upload from Device</label>
+          <div class="upbtn" onclick="document.getElementById('bg-file').click()">📁 Choose Photo or Image</div>
+          <input type="file" id="bg-file" accept="image/*" onchange="handleImg(this)">
+          <img id="bg-thumb" alt="bg preview">
+          <div id="bg-clear" onclick="clearImg()">✕ Remove image</div>
+        </div>
+        <div class="cr"><label>Background Blur</label><div class="crow"><input type="range" id="bgbl" min="0" max="20" value="0" oninput="rvu(this,'bgbl-v','px');upd()"><span class="rv" id="bgbl-v">0px</span></div></div>
+        <div class="cr"><label>Brightness</label><div class="crow"><input type="range" id="bgbr" min="20" max="100" value="100" oninput="rvu(this,'bgbr-v','%');upd()"><span class="rv" id="bgbr-v">100%</span></div></div>
+        <div class="cr"><label>Dark Overlay</label><div class="crow"><input type="range" id="bgov" min="0" max="90" value="0" oninput="rvu(this,'bgov-v','%');upd()"><span class="rv" id="bgov-v">0%</span></div></div>
+      </div>
+    </div>
+
+    <!-- EFFECTS -->
+    <div class="cs">
+      <div class="ch" onclick="tog(this)">Effects <span class="ar">▶</span></div>
+      <div class="cb">
+        <div class="cr"><div class="trow"><label>Glassmorphism</label><label class="tog"><input type="checkbox" id="fxg" onchange="upd()"><div class="tt"></div><div class="tb"></div></label></div></div>
+        <div class="cr"><label>Sidebar Opacity</label><div class="crow"><input type="range" id="sbop" min="40" max="100" value="100" oninput="rvu(this,'sbop-v','%');upd()"><span class="rv" id="sbop-v">100%</span></div></div>
+        <div class="cr"><div class="trow"><label>Saturate Colors</label><label class="tog"><input type="checkbox" id="fxsat" onchange="upd()"><div class="tt"></div><div class="tb"></div></label></div></div>
+        <div class="cr"><div class="trow"><label>Animated Accent</label><label class="tog"><input type="checkbox" id="fxan" onchange="upd()"><div class="tt"></div><div class="tb"></div></label></div></div>
+      </div>
+    </div>
+
+  </div><!-- end controls -->
+
+  <!-- PREVIEW -->
+  <div class="prev-panel">
+    <div class="plabel">// <span class="hl">live.preview</span> <span style="color:var(--text3);font-size:0.57rem">discord mock</span></div>
+    <div class="prev-tb">
+      <div class="pdots"><span class="dr"></span><span class="dy"></span><span class="dg"></span></div>
+      <div class="ptitle">VenTheme — #themes</div>
+    </div>
+    <div class="pvp">
+      <div class="dcm cozy" id="dcm">
+        <div class="dcg" id="dcg">
+          <div class="dgi a" style="background:#5865f2;color:#fff">V</div>
+          <div class="dgi" style="background:#3ba55c;color:#fff">G</div>
+          <div class="dgi" style="background:#faa61a;color:#fff">A</div>
+          <div class="dgi" style="background:#ed4245;color:#fff">!</div>
+          <div class="dgi" style="background:#4f545c;color:#fff">+</div>
+        </div>
+        <div class="dcsb" id="dcsb">
+          <div class="dsvr" id="dsvr">VenTheme ∨</div>
+          <div class="dchs">
+            <div class="dcat">Text Channels</div>
+            <div class="dch"><span>#</span> general</div>
+            <div class="dch a" id="dcha"><span>#</span> themes</div>
+            <div class="dch"><span>#</span> showcase</div>
+            <div class="dch"><span>#</span> help</div>
+            <div class="dcat" style="margin-top:5px">Voice</div>
+            <div class="dch"><span>🔊</span> Lounge</div>
+          </div>
+          <div class="dub" id="dub">
+            <div class="dava" id="dava" style="background:#5865f2;color:#fff">U</div>
+            <div><div class="dun">user</div><div class="dtag">#0001</div></div>
+          </div>
+        </div>
+        <div class="dcmain" id="dcmain">
+          <div class="dcbg" id="dcbg"></div>
+          <div class="dcch" id="dcch"><span>#</span><span class="n">themes</span><span style="opacity:.2">|</span><span class="d">Share themes</span></div>
+          <div class="dcmgs" id="dcmgs">
+            <div class="dcmsg">
+              <div class="dcmav" style="background:#5865f2;color:#fff">V</div>
+              <div><div class="dcmhdr"><span class="dcmn" style="color:#5865f2">VenTheme</span><span class="dcmt2">12:00</span></div>
+              <div class="dcmtxt">Welcome! Customize your theme on the left 🎨</div></div>
+            </div>
+            <div class="dcmsg">
+              <div class="dcmav" style="background:#3ba55c;color:#fff">A</div>
+              <div><div class="dcmhdr"><span class="dcmn" style="color:#3ba55c">Alice</span><span class="dcmt2">12:01</span></div>
+              <div class="dcmtxt">Loaded <code>sakura</code> preset and it looks so good 🌸</div></div>
+            </div>
+            <div class="dcmsg">
+              <div class="dcmav" style="background:#faa61a;color:#fff">B</div>
+              <div><div class="dcmhdr"><span class="dcmn" style="color:#faa61a">Bob</span><span class="dcmt2">12:02</span></div>
+              <div class="dcmtxt">You can upload a background straight from your photos now!</div></div>
+            </div>
+            <div class="dcmsg">
+              <div class="dcmav" style="background:#ed4245;color:#fff">C</div>
+              <div><div class="dcmhdr"><span class="dcmn" style="color:#ed4245">Charlie</span><span class="dcmt2">12:03</span></div>
+              <div class="dcmtxt">Hacker preset goes absolutely hard 💻</div></div>
+            </div>
+          </div>
+          <div class="dcinp">
+            <div class="dcinpb" id="dcinpb"><span class="dcinph">Message #themes</span><span class="dcinpi">😀 🎁 📎</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CSS OUTPUT -->
+  <div class="css-panel">
+    <div class="plabel">// <span class="hl">output.css</span></div>
+    <div class="css-ed"><textarea class="csta" id="cssout" spellcheck="false" placeholder="/* CSS generates here... */"></textarea></div>
+    <div class="csacts">
+      <button class="btn p" style="flex:1" onclick="openModal()">Export for Vencord</button>
+      <button class="btn" onclick="copyCss()">Copy</button>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features">
+  <div class="slabel">// features</div>
+  <div class="stitle">Everything to <span>theme Discord.</span></div>
+  <div class="fgrid">
+    <div class="fcard"><div class="ficon">🎨</div><div class="ftitle">Full Color Control</div><div class="fdesc">Background, sidebar, accent, text, links, mentions — all fully customizable.</div></div>
+    <div class="fcard"><div class="ficon">🔤</div><div class="ftitle">Typography</div><div class="fdesc">Font family, size, weight, line height and letter spacing.</div></div>
+    <div class="fcard"><div class="ficon">📐</div><div class="ftitle">Layout</div><div class="fdesc">Cozy, compact or bubble messages. Hide panels. Adjust sidebar width.</div></div>
+    <div class="fcard"><div class="ficon">🖼️</div><div class="ftitle">Device Image Upload</div><div class="fdesc">Choose any photo from your device as a background. No URL needed.</div></div>
+    <div class="fcard"><div class="ficon">✨</div><div class="ftitle">Effects</div><div class="fdesc">Glass, blur, brightness, overlay, saturation and animated accent colors.</div></div>
+    <div class="fcard"><div class="ficon">📦</div><div class="ftitle">Vencord Export</div><div class="fdesc">One click downloads a ready-to-use .css file for Vencord themes.</div></div>
+  </div>
+</section>
+
+<section class="howto">
+  <div class="slabel">// how.to.use</div>
+  <div class="stitle">Into <span>Vencord</span> in 3 steps.</div>
+  <div class="steps">
+    <div class="step"><div class="snum">01</div><div><div class="steptitle">Design your theme</div><div class="stepdesc">Use the editor — colors, fonts, layout, upload a background from your photos, effects and more.</div></div></div>
+    <div class="step"><div class="snum">02</div><div><div class="steptitle">Download the CSS</div><div class="stepdesc">Click Download to save <code style="background:var(--surface2);padding:1px 5px;border-radius:3px">ventheme.css</code> to your device.</div></div></div>
+    <div class="step"><div class="snum">03</div><div><div class="steptitle">Drop into Vencord</div><div class="stepdesc">Settings → Vencord → Themes → Open Themes Folder. Paste the file and enable it.</div><div class="stepcode">Settings → Vencord → Themes → Open Themes Folder</div></div></div>
+  </div>
+</section>
+
+<footer>
+  <div class="ftl">VenTheme — Discord theme editor for <a href="https://vencord.dev" target="_blank">Vencord</a>. Not affiliated with Discord Inc.</div>
+  <div class="ftr"><a href="https://vencord.dev" class="ftlink" target="_blank">Vencord</a><a href="https://github.com" class="ftlink" target="_blank">GitHub</a></div>
+</footer>
+
+<div class="moverlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <h2>Export Theme</h2>
+    <p>Download the <code style="background:var(--surface3);padding:1px 5px;border-radius:3px">.css</code> file and place it in your Vencord themes folder to use it.</p>
+    <div class="mcode" id="mprev"></div>
+    <div class="macts">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="copyCss();closeModal()">Copy CSS</button>
+      <button class="btn p" onclick="downloadCSS()">↓ Download .css</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span id="ti">✓</span><span id="tm">Done!</span></div>
+
+<script>
+let bgData=null;
+
+const PRESETS={
+  default:{bg:'#313338',sb:'#2b2d31',ac:'#5865f2',tx:'#dbdee1',ch:'#404249',inp:'#383a40',lk:'#00b0f4',mn:'#faa61a',ff:0,fsz:14,fw:'400',lh:14,ls:0,br:8,avr:50,sbw:200,msgp:8,ml:'cozy',hg:false,hm:false,hb:false,sbord:false,fxg:false,sbop:100,fxsat:false,fxan:false,bgbl:0,bgbr:100,bgov:0},
+  midnight:{bg:'#0d0d12',sb:'#08080e',ac:'#7c3aed',tx:'#e4e4f0',ch:'#1a1a2e',inp:'#13131f',lk:'#a78bfa',mn:'#7c3aed',ff:0,fsz:14,fw:'400',lh:14,ls:0,br:12,avr:50,sbw:200,msgp:10,ml:'cozy',hg:false,hm:false,hb:false,sbord:false,fxg:false,sbop:100,fxsat:false,fxan:false,bgbl:0,bgbr:80,bgov:0},
+  sakura:{bg:'#2d1b2e',sb:'#1f1020',ac:'#f472b6',tx:'#fce7f3',ch:'#3d2840',inp:'#2a1a2b',lk:'#f9a8d4',mn:'#fb7185',ff:0,fsz:14,fw:'400',lh:15,ls:0,br:16,avr:50,sbw:200,msgp:10,ml:'cozy',hg:false,hm:false,hb:true,sbord:false,fxg:false,sbop:100,fxsat:true,fxan:false,bgbl:0,bgbr:90,bgov:0},
+  hacker:{bg:'#000000',sb:'#041a00',ac:'#00ff41',tx:'#00ff41',ch:'#001800',inp:'#001200',lk:'#00ff41',mn:'#00ff41',ff:1,fsz:13,fw:'400',lh:14,ls:1,br:0,avr:0,sbw:200,msgp:5,ml:'compact',hg:false,hm:false,hb:true,sbord:false,fxg:false,sbop:100,fxsat:false,fxan:true,bgbl:0,bgbr:100,bgov:0},
+  ocean:{bg:'#0a1628',sb:'#071020',ac:'#0ea5e9',tx:'#bae6fd',ch:'#0d2040',inp:'#0a1830',lk:'#7dd3fc',mn:'#38bdf8',ff:0,fsz:14,fw:'400',lh:14,ls:0,br:10,avr:50,sbw:200,msgp:8,ml:'cozy',hg:false,hm:false,hb:false,sbord:false,fxg:false,sbop:100,fxsat:false,fxan:false,bgbl:0,bgbr:90,bgov:0},
+  sunset:{bg:'#1a0a14',sb:'#140810',ac:'#f97316',tx:'#fed7aa',ch:'#2a1020',inp:'#1e0c18',lk:'#fdba74',mn:'#fb923c',ff:0,fsz:14,fw:'400',lh:14,ls:0,br:8,avr:50,sbw:200,msgp:8,ml:'cozy',hg:false,hm:false,hb:false,sbord:false,fxg:false,sbop:100,fxsat:false,fxan:false,bgbl:0,bgbr:85,bgov:20},
+  nord:{bg:'#2e3440',sb:'#272c36',ac:'#88c0d0',tx:'#eceff4',ch:'#3b4252',inp:'#3b4252',lk:'#81a1c1',mn:'#ebcb8b',ff:0,fsz:14,fw:'400',lh:14,ls:0,br:6,avr:50,sbw:200,msgp:8,ml:'cozy',hg:false,hm:false,hb:false,sbord:false,fxg:false,sbop:100,fxsat:false,fxan:false,bgbl:0,bgbr:100,bgov:0},
+  dracula:{bg:'#282a36',sb:'#21222c',ac:'#bd93f9',tx:'#f8f8f2',ch:'#44475a',inp:'#383a4a',lk:'#8be9fd',mn:'#f1fa8c',ff:0,fsz:14,fw:'400',lh:14,ls:0,br:8,avr:50,sbw:200,msgp:8,ml:'cozy',hg:false,hm:false,hb:false,sbord:false,fxg:false,sbop:100,fxsat:false,fxan:false,bgbl:0,bgbr:100,bgov:0},
+};
+
+function loadPreset(n){
+  const p=PRESETS[n];if(!p)return;
+  setv('c-bg',p.bg);setv('c-bg-h',p.bg);setv('c-sb',p.sb);setv('c-sb-h',p.sb);
+  setv('c-ac',p.ac);setv('c-ac-h',p.ac);setv('c-tx',p.tx);setv('c-tx-h',p.tx);
+  setv('c-ch',p.ch);setv('c-ch-h',p.ch);setv('c-in',p.inp);setv('c-in-h',p.inp);
+  setv('c-lk',p.lk);setv('c-lk-h',p.lk);setv('c-mn',p.mn);setv('c-mn-h',p.mn);
+  document.getElementById('ff').selectedIndex=p.ff;
+  setv('fsz',p.fsz);gt('fsz-v',p.fsz+'px');
+  document.getElementById('fw').value=p.fw;
+  setv('lh',p.lh);gt('lh-v',(p.lh/10).toFixed(1));
+  setv('ls',p.ls);gt('ls-v',p.ls+'px');
+  setv('br',p.br);gt('br-v',p.br+'px');
+  setv('avr',p.avr);gt('avr-v',p.avr+'%');
+  setv('sbw',p.sbw);gt('sbw-v',p.sbw+'px');
+  setv('msgp',p.msgp);gt('msgp-v',p.msgp+'px');
+  document.getElementById('ml').value=p.ml;
+  sck('hg',p.hg);sck('hm',p.hm);sck('hb',p.hb);sck('sbord',p.sbord);
+  sck('fxg',p.fxg);setv('sbop',p.sbop);gt('sbop-v',p.sbop+'%');
+  sck('fxsat',p.fxsat);sck('fxan',p.fxan);
+  setv('bgbl',p.bgbl);gt('bgbl-v',p.bgbl+'px');
+  setv('bgbr',p.bgbr);gt('bgbr-v',p.bgbr+'%');
+  setv('bgov',p.bgov);gt('bgov-v',p.bgov+'%');
+  upd();
+  showToast('✦','"'+n+'" loaded!');
+}
+
+function setv(id,v){const e=document.getElementById(id);if(e)e.value=v}
+function gt(id,v){const e=document.getElementById(id);if(e)e.textContent=v}
+function sck(id,v){const e=document.getElementById(id);if(e)e.checked=v}
+function gv(id){return(document.getElementById(id)||{}).value||''}
+function gc(id){return !!(document.getElementById(id)||{}).checked}
+function sc(inp,hid){document.getElementById(hid).value=inp.value}
+function sh(inp,cid){if(/^#[0-9a-fA-F]{6}$/.test(inp.value))document.getElementById(cid).value=inp.value}
+function rvu(inp,vid,sfx){document.getElementById(vid).textContent=inp.value+sfx}
+function rvd(inp,vid,d){document.getElementById(vid).textContent=(inp.value/d).toFixed(1)}
+function tog(h){h.classList.toggle('o');h.nextElementSibling.classList.toggle('o')}
+
+function handleImg(inp){
+  const f=inp.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    bgData=e.target.result;
+    const t=document.getElementById('bg-thumb');
+    t.src=bgData;t.style.display='block';
+    document.getElementById('bg-clear').style.display='block';
+    upd();
+  };
+  r.readAsDataURL(f);
+}
+function clearImg(){
+  bgData=null;
+  const t=document.getElementById('bg-thumb');t.style.display='none';t.src='';
+  document.getElementById('bg-clear').style.display='none';
+  document.getElementById('bg-file').value='';
+  upd();
+}
+
+function rgb(hex){return[parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)]}
+function rgba(hex,a){const[r,g,b]=rgb(hex);return`rgba(${r},${g},${b},${a})`}
+function darken(hex,a){let[r,g,b]=rgb(hex);return`rgb(${Math.max(0,Math.floor(r*(1-a)))},${Math.max(0,Math.floor(g*(1-a)))},${Math.max(0,Math.floor(b*(1-a)))})`}
+
+function upd(){
+  const bg=gv('c-bg'),sb=gv('c-sb'),ac=gv('c-ac'),tx=gv('c-tx');
+  const ch=gv('c-ch'),inp=gv('c-in'),lk=gv('c-lk'),mn=gv('c-mn');
+  const ff=gv('ff'),fsz=gv('fsz'),fw=gv('fw');
+  const lh=(parseInt(gv('lh'))/10).toFixed(1),ls=gv('ls');
+  const br=gv('br'),avr=gv('avr'),sbw=gv('sbw'),msgp=gv('msgp');
+  const ml=gv('ml');
+  const hg=gc('hg'),hm=gc('hm'),hb=gc('hb'),sbord=gc('sbord');
+  const fxg=gc('fxg'),sbop=parseInt(gv('sbop'))/100;
+  const fxsat=gc('fxsat'),fxan=gc('fxan');
+  const bgbl=gv('bgbl'),bgbr=gv('bgbr'),bgov=parseInt(gv('bgov'))/100;
+
+  const mock=document.getElementById('dcm');
+  mock.style.cssText=`font-size:${fsz}px;line-height:${lh};font-family:${ff};font-weight:${fw};letter-spacing:${ls}px;background:${bg};color:${tx}`;
+  mock.className='dcm '+ml;
+  mock.style.filter=fxsat?'saturate(1.4)':'';
+
+  document.getElementById('dcg').style.cssText=`background:${darken(sb,0.2)};display:${hg?'none':'flex'}`;
+
+  const dcsb=document.getElementById('dcsb');
+  dcsb.style.width=sbw+'px';dcsb.style.minWidth=sbw+'px';
+  dcsb.style.background=fxg?rgba(sb,sbop):rgba(sb,sbop);
+  dcsb.style.backdropFilter=fxg?'blur(20px)':'';
+  dcsb.style.color=tx;
+  document.getElementById('dsvr').style.color=tx;
+
+  document.querySelectorAll('.dch').forEach(c=>{
+    c.style.color=tx;
+    if(c.classList.contains('a')){c.style.background=ch;c.style.borderRadius=Math.min(parseInt(br),6)+'px';}
+  });
+
+  const dub=document.getElementById('dub');
+  dub.style.background=darken(sb,0.18);
+  const dava=document.getElementById('dava');
+  dava.style.borderRadius=avr+'%';dava.style.background=ac;
+
+  const dmain=document.getElementById('dcmain');
+  dmain.style.background=bg;
+  const dch=document.getElementById('dcch');
+  dch.style.background=fxg?rgba(bg,0.85):bg;
+  dch.style.backdropFilter=fxg?'blur(16px)':'';
+  dch.style.color=tx;
+  dch.style.borderBottom=sbord?`1px solid ${rgba(tx,0.1)}`:'1px solid rgba(255,255,255,0.06)';
+
+  const dcbg=document.getElementById('dcbg');
+  if(bgData){
+    dcbg.style.backgroundImage=`url(${bgData})`;
+    dcbg.style.filter=`blur(${bgbl}px) brightness(${bgbr}%)`;
+    dcbg.style.opacity='1';
+    dmain.style.background=bgov>0?rgba(bg,bgov):'transparent';
+  } else {
+    dcbg.style.backgroundImage='';dcbg.style.opacity='0';
+    dmain.style.background=bg;
+  }
+
+  document.querySelectorAll('.dcmav').forEach(a=>a.style.borderRadius=avr+'%');
+  document.querySelectorAll('.dcmsg').forEach(m=>m.style.padding=`${msgp}px 0`);
+  document.querySelectorAll('.dcmtxt code').forEach(c=>{c.style.background=rgba(ac,0.15);c.style.color=ac});
+
+  const inpb=document.getElementById('dcinpb');
+  inpb.style.background=inp;inpb.style.color=tx;inpb.style.borderRadius=br+'px';
+  inpb.style.border=sbord?`1px solid ${rgba(tx,0.1)}`:'1px solid rgba(255,255,255,0.05)';
+
+  genCSS({bg,sb,ac,tx,ch,inp,lk,mn,ff,fsz,fw,lh,ls,br,avr,sbw,msgp,ml,hg,hm,hb,sbord,fxg,sbop,fxsat,fxan,bgbl,bgbr,bgov});
+}
+
+function genCSS(v){
+  const L=[
+    `/**`,` * VenTheme Export`,` * Generated: ${new Date().toLocaleDateString()}`,` * Vencord → Settings → Themes → Open Themes Folder`,` */`,``,
+    `:root {`,
+    `  --background-primary: ${v.bg};`,
+    `  --background-secondary: ${v.sb};`,
+    `  --background-secondary-alt: ${darken(v.sb,0.15)};`,
+    `  --background-tertiary: ${darken(v.sb,0.25)};`,
+    `  --background-accent: ${v.ch};`,
+    `  --background-floating: ${v.inp};`,
+    `  --channeltextarea-background: ${v.inp};`,
+    `  --text-normal: ${v.tx};`,
+    `  --text-muted: ${rgba(v.tx,0.5)};`,
+    `  --text-link: ${v.lk};`,
+    `  --brand-experiment: ${v.ac};`,
+    `  --brand-experiment-560: ${v.ac};`,
+    `  --interactive-normal: ${rgba(v.tx,0.65)};`,
+    `  --interactive-hover: ${v.tx};`,
+    `  --interactive-active: ${v.tx};`,
+    `  --mention-foreground: ${v.mn};`,
+    `}`,``,
+    `/* === Typography === */`,
+    `.theme-dark * { font-family: ${v.ff} !important; }`,
+    `.theme-dark { font-size: ${v.fsz}px; font-weight: ${v.fw}; line-height: ${v.lh}; letter-spacing: ${v.ls}px; }`,``,
+    `/* === Shape === */`,
+    `.avatar_b37765, .wrapper_b37765 { border-radius: ${v.avr}% !important; }`,
+    `.message_d5deea { padding: ${v.msgp}px 16px !important; }`,
+    `.container_bd5d48 { border-radius: ${v.br}px !important; }`,``,
+    `/* === Sidebar === */`,
+    `.sidebar_ded4b5 { width: ${v.sbw}px !important; }`,
+  ];
+  if(v.fxg) L.push(`/* Glass */`,`.sidebar_ded4b5 { background: ${rgba(v.sb,v.sbop)} !important; backdrop-filter: blur(20px) !important; -webkit-backdrop-filter: blur(20px) !important; }`);
+  else if(v.sbop<1) L.push(`/* Sidebar opacity */`,`.sidebar_ded4b5 { opacity: ${v.sbop} !important; }`);
+  if(v.hg) L.push(`/* Hide server list */`,`.guilds_a4d4d9 { display: none !important; }`);
+  if(v.hm) L.push(`/* Hide member list */`,`.membersWrap_cbd271 { display: none !important; }`);
+  if(v.hb) L.push(`/* Hide boost bar */`,`.boostBar_b5e2a7, .premiumUpsellerTrial_b5e2a7 { display: none !important; }`);
+  if(v.sbord) L.push(`/* Borders */`,`.container_bd5d48, .sidebar_ded4b5 { border: 1px solid ${rgba(v.tx,0.1)} !important; }`);
+  if(v.fxsat) L.push(`/* Saturate */`,`.theme-dark { filter: saturate(1.4); }`);
+  if(v.fxan) L.push(`/* Animated accent */`,`@keyframes hueShift { 0%{filter:hue-rotate(0deg)} 100%{filter:hue-rotate(360deg)} }`,`.theme-dark { animation: hueShift 8s linear infinite; }`);
+  if(v.ml==='compact') L.push(`/* Compact */`,`.cozy__74017 { display: none !important; }`,`.message_d5deea { margin: 2px 0 !important; padding: 2px 16px !important; }`);
+  if(v.ml==='bubble') L.push(`/* Bubble */`,`.messageContent_f9f2ca { background: ${rgba(v.tx,0.07)} !important; padding: 7px 12px !important; border-radius: 14px !important; display: inline-block !important; }`);
+  if(bgData) L.push(``,`/* === Background Image ===`,` * Your uploaded image is shown in the preview.`,` * To use in Vencord, host the image on imgur.com and use:`,` */`,`.chat_a7d72e {`,`  background: url('PASTE_YOUR_IMGUR_URL_HERE') center / cover !important;`,`  filter: blur(${v.bgbl}px) brightness(${v.bgbr}%);`,`}`);
+  const css=L.join('\n');
+  document.getElementById('cssout').value=css;
+  return css;
+}
+
+function switchTab(tab,name){
+  document.querySelectorAll('.etab').forEach(t=>t.classList.remove('a'));
+  tab.classList.add('a');
+  document.getElementById('tab-editor').style.display=name==='editor'?'flex':'none';
+}
+
+function resetAll(){loadPreset('default');clearImg();showToast('↺','Reset to default')}
+function openModal(){document.getElementById('mprev').textContent=document.getElementById('cssout').value;document.getElementById('modal').classList.add('o')}
+function closeModal(){document.getElementById('modal').classList.remove('o')}
+function copyCss(){navigator.clipboard.writeText(document.getElementById('cssout').value).then(()=>showToast('✓','Copied!'))}
+function downloadCSS(){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([document.getElementById('cssout').value],{type:'text/css'}));
+  a.download='ventheme.css';a.click();URL.revokeObjectURL(a.href);
+  showToast('↓','Downloaded!');closeModal();
+}
+function showToast(icon,msg){
+  document.getElementById('ti').textContent=icon;
+  document.getElementById('tm').textContent=msg;
+  const t=document.getElementById('toast');t.classList.add('s');
+  setTimeout(()=>t.classList.remove('s'),2400);
+}
+
+upd();
+</script>
+</body>
+</html>
