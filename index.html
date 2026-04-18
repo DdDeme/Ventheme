@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VenTheme — Discord Theme Editor for Vencord</title>
+<meta name="description" content="Create, edit, and export custom Discord themes for Vencord. Visual theme editor with live preview.">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --bg: #0c0c0e;
+  --surface: #111115;
+  --surface2: #18181e;
+  --surface3: #202028;
+  --surface4: #28282f;
+  --border: #252530;
+  --border2: #333340;
+  --accent: #5865f2;
+  --accent-dim: #4752c4;
+  --accent-glow: rgba(88,101,242,0.2);
+  --green: #3ba55c;
+  --red: #ed4245;
+  --yellow: #faa61a;
+  --cyan: #00b0f4;
+  --text: #e2e2ee;
+  --text2: #8888aa;
+  --text3: #44445a;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Syne', sans-serif;
+  --radius: 8px;
+}
+
+html { font-size: 14px; scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  min-height: 100vh;
+  overflow-x: hidden;
+  cursor: default;
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 10px; }
+
+/* ─── NOISE OVERLAY ─── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  opacity: 0.5;
+}
+
+/* ─── HEADER ─── */
+header {
+  position: sticky; top: 0; z-index: 200;
+  height: 54px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 clamp(16px, 4vw, 32px);
+  background: rgba(12,12,14,0.8);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  font-family: var(--sans);
+  font-weight: 800; font-size: 1.15rem;
+  letter-spacing: -0.04em;
+  display: flex; align-items: center; gap: 10px;
+  user-select: none;
+}
+.logo-icon {
+  width: 28px; height: 28px;
+  background: var(--accent);
+  border-radius: 7px;
+  display: grid; place-items: center;
+  font-size: 0.75rem;
+  box-shadow: 0 0 16px var(--accent-glow);
+  animation: breathe 3s ease-in-out infinite;
+}
+@keyframes breathe {
+  0%,100%{box-shadow:0 0 16px var(--accent-glow)}
+  50%{box-shadow:0 0 28px rgba(88,101,242,0.4)}
+}
+.logo-text { color: var(--text); }
+.logo-text span { color: var(--accent); }
+
+.header-right { display: flex; align-items: center; gap: 10px; }
+
+.badge {
+  font-size: 0.6rem; font-family: var(--mono);
+  padding: 3px 8px; border-radius: 4px;
+  border: 1px solid var(--border2);
+  color: var(--text3);
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+.badge.live { border-color: var(--green); color: var(--green); }
+.badge.live::before { content: '● '; }
+
+.btn {
+  font-family: var(--mono); font-size: 0.72rem;
+  padding: 7px 16px; border-radius: var(--radius);
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--text2); cursor: pointer;
+  transition: all 0.15s; letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.btn:hover { border-color: var(--accent); color: var(--text); background: var(--surface3); }
+.btn.primary {
+  background: var(--accent); border-color: var(--accent);
+  color: #fff;
+}
+.btn.primary:hover { background: var(--accent-dim); border-color: var(--accent-dim); }
+.btn.ghost { background: transparent; }
+
+/* ─── HERO ─── */
+.hero {
+  position: relative; z-index: 1;
+  text-align: center;
+  padding: clamp(48px, 8vw, 80px) clamp(16px, 5vw, 40px) clamp(40px, 6vw, 64px);
+  overflow: hidden;
+}
+.hero-grid {
+  position: absolute; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
+  opacity: 0.4;
+}
+.hero-glow {
+  position: absolute; top: -60px; left: 50%; transform: translateX(-50%);
+  width: 600px; height: 300px;
+  background: radial-gradient(ellipse, rgba(88,101,242,0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 20px;
+  border: 1px solid rgba(88,101,242,0.3);
+  padding: 4px 12px; border-radius: 20px;
+  background: rgba(88,101,242,0.07);
+  animation: fadeUp 0.6s ease both;
+}
+
+.hero h1 {
+  font-family: var(--sans);
+  font-size: clamp(2rem, 6vw, 3.8rem);
+  font-weight: 800; line-height: 1.05;
+  letter-spacing: -0.04em;
+  margin-bottom: 18px;
+  animation: fadeUp 0.6s 0.1s ease both;
+}
+.hero h1 em {
+  font-style: normal; color: var(--accent);
+  text-shadow: 0 0 40px var(--accent-glow);
+}
+
+.hero p {
+  font-size: clamp(0.8rem, 1.8vw, 0.95rem);
+  color: var(--text2); max-width: 540px;
+  margin: 0 auto 32px;
+  line-height: 1.8;
+  animation: fadeUp 0.6s 0.2s ease both;
+}
+
+.hero-ctas {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  justify-content: center;
+  animation: fadeUp 0.6s 0.3s ease both;
+}
+
+.hero-code-line {
+  margin-top: 32px;
+  font-size: 0.7rem; color: var(--text3);
+  font-family: var(--mono);
+  animation: fadeUp 0.6s 0.4s ease both;
+}
+.hero-code-line code {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 2px 8px; border-radius: 4px;
+  color: var(--cyan);
+}
+
+@keyframes fadeUp {
+  from { opacity:0; transform: translateY(16px); }
+  to { opacity:1; transform: translateY(0); }
+}
+
+/* ─── MAIN APP LAYOUT ─── */
+.app-shell {
+  position: relative; z-index: 1;
+  display: grid;
+  grid-template-columns: 260px 1fr 280px;
+  grid-template-rows: auto 1fr;
+  gap: 0;
+  height: calc(100vh - 54px - 260px);
+  min-height: 600px;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 clamp(12px, 3vw, 24px) 40px;
+}
+
+@media (max-width: 1100px) {
+  .app-shell { grid-template-columns: 220px 1fr; grid-template-rows: auto auto auto; height: auto; }
+  .css-panel { grid-column: 1 / -1; }
+}
+@media (max-width: 720px) {
+  .app-shell { grid-template-columns: 1fr; height: auto; }
+}
+
+.panel-label {
+  font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text3); padding: 12px 16px 8px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.panel-label span { color: var(--accent); }
+
+/* ─── LEFT SIDEBAR — Controls ─── */
+.controls-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius) 0 0 var(--radius);
+  border-right: none;
+  overflow-y: auto;
+}
+
+.control-section { border-bottom: 1px solid var(--border); }
+.control-section-header {
+  padding: 10px 16px;
+  font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text2); cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between;
+  user-select: none;
+  transition: background 0.1s;
+}
+.control-section-header:hover { background: var(--surface2); }
+.control-section-header .arrow { transition: transform 0.2s; font-size: 0.6rem; color: var(--text3); }
+.control-section-header.open .arrow { transform: rotate(90deg); }
+.control-section-body { padding: 12px 16px; display: none; flex-direction: column; gap: 12px; }
+.control-section-body.open { display: flex; }
+
+.control-row { display: flex; flex-direction: column; gap: 5px; }
+.control-row label { font-size: 0.65rem; color: var(--text2); letter-spacing: 0.04em; }
+
+.color-row { display: flex; align-items: center; gap: 8px; }
+.color-row input[type=color] {
+  width: 32px; height: 28px;
+  border: 1px solid var(--border2); border-radius: 5px;
+  background: none; cursor: pointer; padding: 2px;
+}
+.color-hex {
+  flex: 1; background: var(--surface3);
+  border: 1px solid var(--border); border-radius: 5px;
+  padding: 5px 8px; font-family: var(--mono);
+  font-size: 0.7rem; color: var(--text);
+  outline: none; transition: border-color 0.15s;
+}
+.color-hex:focus { border-color: var(--accent); }
+
+.slider-row { display: flex; align-items: center; gap: 8px; }
+input[type=range] {
+  flex: 1; -webkit-appearance: none; appearance: none;
+  height: 4px; border-radius: 2px;
+  background: var(--surface3); outline: none; cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 14px; height: 14px;
+  border-radius: 50%; background: var(--accent);
+  border: 2px solid var(--bg); cursor: pointer;
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+.slider-val { font-size: 0.65rem; color: var(--text3); min-width: 30px; text-align: right; }
+
+select {
+  width: 100%; background: var(--surface3);
+  border: 1px solid var(--border); border-radius: 5px;
+  padding: 6px 8px; font-family: var(--mono);
+  font-size: 0.7rem; color: var(--text); outline: none;
+  cursor: pointer; transition: border-color 0.15s;
+}
+select:focus { border-color: var(--accent); }
+select option { background: var(--surface3); }
+
+.toggle-row { display: flex; align-items: center; justify-content: space-between; }
+.toggle {
+  position: relative; width: 36px; height: 20px; cursor: pointer;
+}
+.toggle input { display: none; }
+.toggle-track {
+  position: absolute; inset: 0; background: var(--surface4);
+  border-radius: 10px; transition: background 0.2s;
+  border: 1px solid var(--border2);
+}
+.toggle input:checked ~ .toggle-track { background: var(--accent); border-color: var(--accent); }
+.toggle-thumb {
+  position: absolute; top: 3px; left: 3px;
+  width: 14px; height: 14px; background: #fff;
+  border-radius: 50%; transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.toggle input:checked ~ .toggle-thumb { transform: translateX(16px); }
+
+/* ─── CENTER — Preview ─── */
+.preview-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+
+.preview-toolbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+.preview-dots { display: flex; gap: 5px; }
+.preview-dots span {
+  width: 10px; height: 10px; border-radius: 50%;
+}
+.dot-r { background: var(--red); }
+.dot-y { background: var(--yellow); }
+.dot-g { background: var(--green); }
+
+.preview-title {
+  flex: 1; text-align: center;
+  font-size: 0.65rem; color: var(--text3); letter-spacing: 0.05em;
+}
+
+.preview-viewport {
+  flex: 1; overflow: hidden;
+  display: flex; min-height: 420px;
+}
+
+/* Discord Mock UI */
+.discord-mock {
+  width: 100%; display: flex;
+  font-size: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.dc-guilds {
+  width: 52px; min-width: 52px;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 8px;
+  padding: 10px 0;
+  overflow-y: auto;
+}
+.dc-guild {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 0.65rem; font-weight: 600;
+  cursor: pointer; transition: border-radius 0.2s;
+  flex-shrink: 0;
+}
+.dc-guild:hover { border-radius: 12px; }
+.dc-guild.active { border-radius: 12px; }
+
+.dc-sidebar {
+  width: 200px; min-width: 140px;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.dc-server-header {
+  padding: 12px; font-size: 0.72rem; font-weight: 700;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  letter-spacing: -0.02em; cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.dc-channels { flex: 1; overflow-y: auto; padding: 8px 0; }
+.dc-category {
+  padding: 6px 10px 3px; font-size: 0.6rem;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  opacity: 0.5; user-select: none;
+}
+.dc-channel {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 4px; margin: 1px 6px;
+  cursor: pointer; font-size: 0.7rem; opacity: 0.6;
+  transition: all 0.1s;
+}
+.dc-channel:hover { opacity: 0.9; }
+.dc-channel.active { opacity: 1; }
+.dc-channel-icon { font-size: 0.75rem; }
+
+.dc-user-bar {
+  padding: 8px 10px;
+  display: flex; align-items: center; gap: 8px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.dc-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 0.65rem; font-weight: 700;
+  flex-shrink: 0;
+}
+.dc-username { font-size: 0.7rem; font-weight: 600; }
+.dc-tag { font-size: 0.6rem; opacity: 0.5; }
+
+.dc-main {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden;
+}
+.dc-channel-header {
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+}
+.dc-channel-header .name { font-weight: 700; font-size: 0.78rem; }
+.dc-channel-header .desc { font-size: 0.65rem; opacity: 0.5; }
+.dc-channel-header .sep { opacity: 0.2; }
+
+.dc-messages {
+  flex: 1; overflow-y: auto; padding: 16px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.dc-msg { display: flex; gap: 12px; }
+.dc-msg-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  flex-shrink: 0; display: grid; place-items: center;
+  font-size: 0.7rem; font-weight: 700;
+}
+.dc-msg-content {}
+.dc-msg-header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 3px; }
+.dc-msg-name { font-weight: 700; font-size: 0.75rem; }
+.dc-msg-time { font-size: 0.6rem; opacity: 0.35; }
+.dc-msg-text { font-size: 0.72rem; line-height: 1.5; opacity: 0.85; }
+.dc-msg-text code {
+  padding: 1px 5px; border-radius: 3px; font-size: 0.68rem;
+}
+
+.dc-input-bar {
+  padding: 10px 16px; flex-shrink: 0;
+}
+.dc-input {
+  border-radius: 8px; padding: 10px 14px;
+  font-size: 0.72rem; display: flex; align-items: center; gap: 8px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.dc-input-text { opacity: 0.35; flex: 1; }
+.dc-input-icons { display: flex; gap: 10px; opacity: 0.4; font-size: 0.8rem; }
+
+/* ─── RIGHT — CSS Panel ─── */
+.css-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: none;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+
+@media (max-width: 1100px) {
+  .css-panel { border-left: 1px solid var(--border); border-radius: 0 0 var(--radius) var(--radius); }
+  .controls-panel { border-radius: var(--radius) 0 0 0; }
+  .preview-panel { border-radius: 0 var(--radius) 0 0; }
+}
+@media (max-width: 720px) {
+  .controls-panel { border-radius: var(--radius) var(--radius) 0 0; border-right: 1px solid var(--border); }
+  .preview-panel { border-radius: 0; }
+  .css-panel { border-radius: 0 0 var(--radius) var(--radius); border-left: 1px solid var(--border); }
+}
+
+.css-editor {
+  flex: 1; overflow: hidden; position: relative;
+}
+.css-textarea {
+  width: 100%; height: 100%; min-height: 300px;
+  background: transparent; border: none; outline: none; resize: none;
+  font-family: var(--mono); font-size: 0.7rem;
+  color: var(--cyan); line-height: 1.8;
+  padding: 12px 16px; tab-size: 2;
+}
+.css-textarea::selection { background: rgba(88,101,242,0.3); }
+
+.css-actions {
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+
+/* ─── FEATURES SECTION ─── */
+.features {
+  position: relative; z-index: 1;
+  max-width: 1100px; margin: 0 auto;
+  padding: clamp(40px, 6vw, 80px) clamp(16px, 4vw, 32px);
+}
+
+.section-label {
+  font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); max-width: 80px; }
+
+.section-title {
+  font-family: var(--sans); font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 700; letter-spacing: -0.03em; margin-bottom: 40px;
+  line-height: 1.2;
+}
+.section-title span { color: var(--accent); }
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.feature-card {
+  background: var(--surface);
+  padding: 24px;
+  transition: background 0.2s;
+}
+.feature-card:hover { background: var(--surface2); }
+
+.feature-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  display: grid; place-items: center;
+  font-size: 1rem; margin-bottom: 14px;
+}
+.feature-title {
+  font-family: var(--sans); font-weight: 700;
+  font-size: 0.9rem; letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+.feature-desc { font-size: 0.72rem; color: var(--text2); line-height: 1.7; }
+
+/* ─── HOW TO USE ─── */
+.howto {
+  position: relative; z-index: 1;
+  max-width: 800px; margin: 0 auto;
+  padding: 0 clamp(16px, 4vw, 32px) clamp(60px, 8vw, 100px);
+}
+
+.steps { display: flex; flex-direction: column; gap: 0; }
+.step {
+  display: flex; gap: 20px;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--border);
+  animation: fadeUp 0.5s ease both;
+}
+.step:last-child { border-bottom: none; }
+.step-num {
+  font-family: var(--sans); font-size: 2rem; font-weight: 800;
+  color: var(--border2); line-height: 1; flex-shrink: 0;
+  width: 48px; letter-spacing: -0.05em;
+}
+.step-content {}
+.step-title {
+  font-family: var(--sans); font-weight: 700;
+  font-size: 0.95rem; margin-bottom: 6px; letter-spacing: -0.02em;
+}
+.step-desc { font-size: 0.72rem; color: var(--text2); line-height: 1.7; }
+.step-code {
+  margin-top: 10px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 10px 14px;
+  font-size: 0.7rem; color: var(--cyan);
+  overflow-x: auto;
+}
+
+/* ─── FOOTER ─── */
+footer {
+  position: relative; z-index: 1;
+  border-top: 1px solid var(--border);
+  padding: 24px clamp(16px, 4vw, 32px);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px;
+}
+.footer-left { font-size: 0.65rem; color: var(--text3); line-height: 1.6; }
+.footer-left a { color: var(--accent); text-decoration: none; }
+.footer-right { display: flex; gap: 16px; }
+.footer-link {
+  font-size: 0.65rem; color: var(--text3);
+  text-decoration: none; transition: color 0.15s;
+  letter-spacing: 0.04em;
+}
+.footer-link:hover { color: var(--text); }
+
+/* ─── TOAST ─── */
+.toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+  background: var(--surface3); border: 1px solid var(--border2);
+  border-radius: var(--radius); padding: 12px 18px;
+  font-size: 0.72rem; color: var(--text);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  transform: translateY(80px); opacity: 0;
+  transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  display: flex; align-items: center; gap: 10px;
+  max-width: 280px;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast-icon { font-size: 1rem; }
+
+/* ─── MODAL ─── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(6px);
+  display: none; place-items: center; padding: 16px;
+}
+.modal-overlay.open { display: grid; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 12px; padding: 28px;
+  max-width: 480px; width: 100%;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+  animation: fadeUp 0.3s ease;
+}
+.modal h2 {
+  font-family: var(--sans); font-weight: 700; font-size: 1.1rem;
+  letter-spacing: -0.03em; margin-bottom: 8px;
+}
+.modal p { font-size: 0.75rem; color: var(--text2); line-height: 1.7; margin-bottom: 20px; }
+.modal-code {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: 14px;
+  font-size: 0.68rem; color: var(--cyan);
+  white-space: pre-wrap; word-break: break-all;
+  max-height: 260px; overflow-y: auto;
+  margin-bottom: 16px; line-height: 1.7;
+}
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">V</div>
+    <div class="logo-text">Ven<span>Theme</span></div>
+  </div>
+  <div class="header-right">
+    <span class="badge live">live preview</span>
+    <button class="btn ghost" onclick="openModal()">Export CSS</button>
+    <button class="btn primary" onclick="openModal()">↓ Download</button>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  <div style="position:relative;z-index:1">
+    <div class="hero-eyebrow">✦ Vencord Theme Editor</div>
+    <h1>Design your<br><em>Discord</em> look.</h1>
+    <p>Build custom themes visually, tweak every detail, preview in real-time — then export straight into Vencord. No CSS experience needed.</p>
+    <div class="hero-ctas">
+      <button class="btn primary" onclick="document.querySelector('.app-shell').scrollIntoView({behavior:'smooth'})">Open Editor ↓</button>
+      <button class="btn" onclick="loadPreset('midnight')">Load Preset</button>
+      <button class="btn" onclick="loadPreset('sakura')">🌸 Sakura</button>
+      <button class="btn" onclick="loadPreset('hacker')">💻 Hacker</button>
+    </div>
+    <div class="hero-code-line">Import into Vencord → Settings → Themes → <code>Paste CSS</code></div>
+  </div>
+</section>
+
+<!-- EDITOR -->
+<div class="app-shell">
+
+  <!-- LEFT: Controls -->
+  <div class="controls-panel">
+    <div class="panel-label">// <span>theme.controls</span></div>
+
+    <!-- Colors -->
+    <div class="control-section">
+      <div class="control-section-header open" onclick="toggleSection(this)">
+        Colors <span class="arrow">▶</span>
+      </div>
+      <div class="control-section-body open">
+        <div class="control-row">
+          <label>Background</label>
+          <div class="color-row">
+            <input type="color" id="c-bg" value="#313338" oninput="syncColor(this,'c-bg-hex')" onchange="updatePreview()">
+            <input type="text" class="color-hex" id="c-bg-hex" value="#313338" oninput="syncHex(this,'c-bg')" onchange="updatePreview()">
+          </div>
+        </div>
+        <div class="control-row">
+          <label>Sidebar</label>
+          <div class="color-row">
+            <input type="color" id="c-sidebar" value="#2b2d31" oninput="syncColor(this,'c-sidebar-hex')" onchange="updatePreview()">
+            <input type="text" class="color-hex" id="c-sidebar-hex" value="#2b2d31" oninput="syncHex(this,'c-sidebar')" onchange="updatePreview()">
+          </div>
+        </div>
+        <div class="control-row">
+          <label>Accent / Buttons</label>
+          <div class="color-row">
+            <input type="color" id="c-accent" value="#5865f2" oninput="syncColor(this,'c-accent-hex')" onchange="updatePreview()">
+            <input type="text" class="color-hex" id="c-accent-hex" value="#5865f2" oninput="syncHex(this,'c-accent')" onchange="updatePreview()">
+          </div>
+        </div>
+        <div class="control-row">
+          <label>Text</label>
+          <div class="color-row">
+            <input type="color" id="c-text" value="#dbdee1" oninput="syncColor(this,'c-text-hex')" onchange="updatePreview()">
+            <input type="text" class="color-hex" id="c-text-hex" value="#dbdee1" oninput="syncHex(this,'c-text')" onchange="updatePreview()">
+          </div>
+        </div>
+        <div class="control-row">
+          <label>Channel Active</label>
+          <div class="color-row">
+            <input type="color" id="c-chan" value="#404249" oninput="syncColor(this,'c-chan-hex')" onchange="updatePreview()">
+            <input type="text" class="color-hex" id="c-chan-hex" value="#404249" oninput="syncHex(this,'c-chan')" onchange="updatePreview()">
+          </div>
+        </div>
+        <div class="control-row">
+          <label>Message Input</label>
+          <div class="color-row">
+            <input type="color" id="c-input" value="#383a40" oninput="syncColor(this,'c-input-hex')" onchange="updatePreview()">
+            <input type="text" class="color-hex" id="c-input-hex" value="#383a40" oninput="syncHex(this,'c-input')" onchange="updatePreview()">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Typography -->
+    <div class="control-section">
+      <div class="control-section-header" onclick="toggleSection(this)">
+        Typography <span class="arrow">▶</span>
+      </div>
+      <div class="control-section-body">
+        <div class="control-row">
+          <label>Font Family</label>
+          <select id="font-family" onchange="updatePreview()">
+            <option value="'gg sans', 'Noto Sans', sans-serif">gg sans (Discord Default)</option>
+            <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+            <option value="'Fira Code', monospace">Fira Code</option>
+            <option value="Georgia, serif">Georgia</option>
+            <option value="'Comic Sans MS', cursive">Comic Sans</option>
+            <option value="system-ui, sans-serif">System UI</option>
+          </select>
+        </div>
+        <div class="control-row">
+          <label>Font Size</label>
+          <div class="slider-row">
+            <input type="range" id="font-size" min="12" max="20" value="14" oninput="updateSliderVal(this,'font-size-val');updatePreview()">
+            <span class="slider-val" id="font-size-val">14px</span>
+          </div>
+        </div>
+        <div class="control-row">
+          <label>Line Height</label>
+          <div class="slider-row">
+            <input type="range" id="line-height" min="10" max="20" value="14" step="1" oninput="updateSliderVal(this,'line-height-val','.',10);updatePreview()">
+            <span class="slider-val" id="line-height-val">1.4</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Shape -->
+    <div class="control-section">
+      <div class="control-section-header" onclick="toggleSection(this)">
+        Shape &amp; Radius <span class="arrow">▶</span>
+      </div>
+      <div class="control-section-body">
+        <div class="control-row">
+          <label>Border Radius</label>
+          <div class="slider-row">
+            <input type="range" id="border-radius" min="0" max="24" value="8" oninput="updateSliderVal(this,'border-radius-val','px');updatePreview()">
+            <span class="slider-val" id="border-radius-val">8px</span>
+          </div>
+        </div>
+        <div class="control-row">
+          <label>Avatar Radius</label>
+          <div class="slider-row">
+            <input type="range" id="avatar-radius" min="0" max="50" value="50" oninput="updateSliderVal(this,'avatar-radius-val','%');updatePreview()">
+            <span class="slider-val" id="avatar-radius-val">50%</span>
+          </div>
+        </div>
+        <div class="control-row">
+          <label>Sidebar Width</label>
+          <div class="slider-row">
+            <input type="range" id="sidebar-width" min="140" max="280" value="200" oninput="updateSliderVal(this,'sidebar-width-val','px');updatePreview()">
+            <span class="slider-val" id="sidebar-width-val">200px</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Effects -->
+    <div class="control-section">
+      <div class="control-section-header" onclick="toggleSection(this)">
+        Effects <span class="arrow">▶</span>
+      </div>
+      <div class="control-section-body">
+        <div class="control-row">
+          <div class="toggle-row">
+            <label>Glassmorphism</label>
+            <label class="toggle">
+              <input type="checkbox" id="fx-glass" onchange="updatePreview()">
+              <div class="toggle-track"></div>
+              <div class="toggle-thumb"></div>
+            </label>
+          </div>
+        </div>
+        <div class="control-row">
+          <div class="toggle-row">
+            <label>Custom Background Image</label>
+            <label class="toggle">
+              <input type="checkbox" id="fx-bg-img" onchange="updatePreview()">
+              <div class="toggle-track"></div>
+              <div class="toggle-thumb"></div>
+            </label>
+          </div>
+        </div>
+        <div class="control-row" id="bg-url-row" style="display:none">
+          <label>Background URL</label>
+          <input type="text" class="color-hex" id="bg-url" placeholder="https://..." onchange="updatePreview()" style="width:100%">
+        </div>
+        <div class="control-row">
+          <label>Background Blur</label>
+          <div class="slider-row">
+            <input type="range" id="bg-blur" min="0" max="20" value="0" oninput="updateSliderVal(this,'bg-blur-val','px');updatePreview()">
+            <span class="slider-val" id="bg-blur-val">0px</span>
+          </div>
+        </div>
+        <div class="control-row">
+          <label>Sidebar Opacity</label>
+          <div class="slider-row">
+            <input type="range" id="sidebar-opacity" min="50" max="100" value="100" oninput="updateSliderVal(this,'sidebar-opacity-val','%');updatePreview()">
+            <span class="slider-val" id="sidebar-opacity-val">100%</span>
+          </div>
+        </div>
+        <div class="control-row">
+          <div class="toggle-row">
+            <label>Hide Server Boost Bar</label>
+            <label class="toggle">
+              <input type="checkbox" id="fx-hide-boost" onchange="updatePreview()">
+              <div class="toggle-track"></div>
+              <div class="toggle-thumb"></div>
+            </label>
+          </div>
+        </div>
+        <div class="control-row">
+          <div class="toggle-row">
+            <label>Compact Mode</label>
+            <label class="toggle">
+              <input type="checkbox" id="fx-compact" onchange="updatePreview()">
+              <div class="toggle-track"></div>
+              <div class="toggle-thumb"></div>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Presets -->
+    <div class="control-section">
+      <div class="control-section-header" onclick="toggleSection(this)">
+        Presets <span class="arrow">▶</span>
+      </div>
+      <div class="control-section-body" style="gap:8px">
+        <button class="btn" style="width:100%;justify-content:flex-start" onclick="loadPreset('default')">◉ Discord Default</button>
+        <button class="btn" style="width:100%;justify-content:flex-start" onclick="loadPreset('midnight')">🌑 Midnight</button>
+        <button class="btn" style="width:100%;justify-content:flex-start" onclick="loadPreset('sakura')">🌸 Sakura</button>
+        <button class="btn" style="width:100%;justify-content:flex-start" onclick="loadPreset('hacker')">💻 Hacker</button>
+        <button class="btn" style="width:100%;justify-content:flex-start" onclick="loadPreset('ocean')">🌊 Ocean</button>
+        <button class="btn" style="width:100%;justify-content:flex-start" onclick="loadPreset('sunset')">🌇 Sunset</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CENTER: Preview -->
+  <div class="preview-panel">
+    <div class="panel-label">// <span>live.preview</span> <span style="color:var(--text3);font-size:0.6rem">discord mock</span></div>
+    <div class="preview-toolbar">
+      <div class="preview-dots">
+        <span class="dot-r"></span>
+        <span class="dot-y"></span>
+        <span class="dot-g"></span>
+      </div>
+      <div class="preview-title">VenTheme Preview — #general</div>
+    </div>
+    <div class="preview-viewport">
+      <div class="discord-mock" id="discord-mock">
+        <!-- Guilds -->
+        <div class="dc-guilds" id="dc-guilds">
+          <div class="dc-guild active" style="background:#5865f2;color:#fff">V</div>
+          <div class="dc-guild" style="background:#3ba55c;color:#fff">G</div>
+          <div class="dc-guild" style="background:#faa61a;color:#fff">A</div>
+          <div class="dc-guild" style="background:#ed4245;color:#fff">R</div>
+          <div class="dc-guild" style="background:#4f545c;color:#fff">+</div>
+        </div>
+        <!-- Sidebar -->
+        <div class="dc-sidebar" id="dc-sidebar">
+          <div class="dc-server-header" id="dc-server-header">VenTheme ∨</div>
+          <div class="dc-channels" id="dc-channels">
+            <div class="dc-category">Text Channels</div>
+            <div class="dc-channel"><span class="dc-channel-icon">#</span> general</div>
+            <div class="dc-channel active" id="dc-active-chan"><span class="dc-channel-icon">#</span> themes</div>
+            <div class="dc-channel"><span class="dc-channel-icon">#</span> showcase</div>
+            <div class="dc-channel"><span class="dc-channel-icon">#</span> help</div>
+            <div class="dc-category" style="margin-top:8px">Voice</div>
+            <div class="dc-channel"><span class="dc-channel-icon">🔊</span> Lounge</div>
+            <div class="dc-channel"><span class="dc-channel-icon">🔊</span> Dev Room</div>
+          </div>
+          <div class="dc-user-bar" id="dc-user-bar">
+            <div class="dc-avatar" id="dc-avatar" style="background:#5865f2;color:#fff">U</div>
+            <div>
+              <div class="dc-username">user</div>
+              <div class="dc-tag">#0001</div>
+            </div>
+          </div>
+        </div>
+        <!-- Main -->
+        <div class="dc-main" id="dc-main">
+          <div class="dc-channel-header" id="dc-channel-header">
+            <span class="dc-channel-icon">#</span>
+            <span class="name">themes</span>
+            <span class="sep">|</span>
+            <span class="desc">Share your Vencord themes</span>
+          </div>
+          <div class="dc-messages" id="dc-messages">
+            <div class="dc-msg">
+              <div class="dc-msg-avatar" style="background:#5865f2;color:#fff">V</div>
+              <div class="dc-msg-content">
+                <div class="dc-msg-header">
+                  <span class="dc-msg-name" style="color:#5865f2">VenTheme</span>
+                  <span class="dc-msg-time">Today at 12:00</span>
+                </div>
+                <div class="dc-msg-text">Welcome! Use the editor on the left to customize your theme 🎨</div>
+              </div>
+            </div>
+            <div class="dc-msg">
+              <div class="dc-msg-avatar" style="background:#3ba55c;color:#fff">A</div>
+              <div class="dc-msg-content">
+                <div class="dc-msg-header">
+                  <span class="dc-msg-name" style="color:#3ba55c">Alice</span>
+                  <span class="dc-msg-time">Today at 12:01</span>
+                </div>
+                <div class="dc-msg-text">This is so cool! Just made a <code style="background:rgba(255,255,255,0.1);border-radius:3px;padding:1px 4px">sakura</code> theme 🌸</div>
+              </div>
+            </div>
+            <div class="dc-msg">
+              <div class="dc-msg-avatar" style="background:#faa61a;color:#fff">B</div>
+              <div class="dc-msg-content">
+                <div class="dc-msg-header">
+                  <span class="dc-msg-name" style="color:#faa61a">Bob</span>
+                  <span class="dc-msg-time">Today at 12:03</span>
+                </div>
+                <div class="dc-msg-text">Try the hacker preset, it slaps 💻</div>
+              </div>
+            </div>
+          </div>
+          <div class="dc-input-bar">
+            <div class="dc-input" id="dc-input-box">
+              <span class="dc-input-text">Message #themes</span>
+              <span class="dc-input-icons">😀 🎁 📎</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: CSS Output -->
+  <div class="css-panel">
+    <div class="panel-label">// <span>output.css</span></div>
+    <div class="css-editor">
+      <textarea class="css-textarea" id="css-output" spellcheck="false" placeholder="/* CSS will generate here... */"></textarea>
+    </div>
+    <div class="css-actions">
+      <button class="btn primary" onclick="openModal()" style="flex:1">Export for Vencord</button>
+      <button class="btn" onclick="copyCSS()">Copy</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- FEATURES -->
+<section class="features">
+  <div class="section-label">// features</div>
+  <div class="section-title">Everything you need<br>to <span>theme Discord.</span></div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🎨</div>
+      <div class="feature-title">Visual Editor</div>
+      <div class="feature-desc">Pick colors, adjust fonts, tune every radius and spacing value with simple controls. No code required.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <div class="feature-title">Live Preview</div>
+      <div class="feature-desc">See your changes reflected instantly in a Discord mockup. What you see is what you get.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">💻</div>
+      <div class="feature-title">CSS Editor</div>
+      <div class="feature-desc">Drop into the raw CSS panel to write custom overrides, animations, or advanced selectors.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📦</div>
+      <div class="feature-title">Vencord Export</div>
+      <div class="feature-desc">One click generates a Vencord-ready CSS file. Paste it into the Themes tab and you're done.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎭</div>
+      <div class="feature-title">Built-in Presets</div>
+      <div class="feature-desc">Start from Midnight, Sakura, Ocean, Hacker and more — then make them your own.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🖼️</div>
+      <div class="feature-title">Background Images</div>
+      <div class="feature-desc">Set any image URL as a background with blur and opacity controls for that perfect aesthetic.</div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW TO USE -->
+<section class="howto">
+  <div class="section-label">// how.to.use</div>
+  <div class="section-title">Get your theme into <span>Vencord</span> in 3 steps.</div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-content">
+        <div class="step-title">Design your theme</div>
+        <div class="step-desc">Use the editor above to tweak colors, fonts, border radius, effects and more. The live preview updates as you go.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-content">
+        <div class="step-title">Export the CSS</div>
+        <div class="step-desc">Click <strong>Export for Vencord</strong> to download your <code style="background:var(--surface2);padding:1px 5px;border-radius:3px">.css</code> file, or copy the CSS directly from the panel.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-content">
+        <div class="step-title">Import into Vencord</div>
+        <div class="step-desc">Open Discord → Settings → Vencord → Themes → Open Themes Folder. Drop your file in, then enable it. Done!</div>
+        <div class="step-code">Settings → Vencord → Themes → Open Themes Folder → paste .css file</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-left">
+    VenTheme — open source Discord theme editor for <a href="https://vencord.dev" target="_blank">Vencord</a>.<br>
+    Not affiliated with Discord Inc. or the Vencord project.
+  </div>
+  <div class="footer-right">
+    <a href="https://vencord.dev" class="footer-link" target="_blank">Vencord</a>
+    <a href="https://github.com" class="footer-link" target="_blank">GitHub</a>
+    <a href="#" class="footer-link">Docs</a>
+  </div>
+</footer>
+
+<!-- EXPORT MODAL -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <h2>Export Theme</h2>
+    <p>Copy the CSS below and paste it into a <code style="background:var(--surface3);padding:1px 5px;border-radius:3px">.css</code> file inside your Vencord themes folder, or click Download.</p>
+    <div class="modal-code" id="modal-css-preview"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="copyCSS();closeModal()">Copy CSS</button>
+      <button class="btn primary" onclick="downloadCSS()">↓ Download .css</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toast-icon">✓</span>
+  <span id="toast-msg">Copied!</span>
+</div>
+
+<script>
+// ── PRESETS ──
+const PRESETS = {
+  default: { bg:'#313338', sidebar:'#2b2d31', accent:'#5865f2', text:'#dbdee1', chan:'#404249', input:'#383a40', fontFamily:0, fontSize:14, lineHeight:14, borderRadius:8, avatarRadius:50, sidebarWidth:200, glass:false, bgImg:false, bgUrl:'', bgBlur:0, sidebarOpacity:100, hideBoost:false, compact:false },
+  midnight: { bg:'#0d0d12', sidebar:'#08080e', accent:'#7c3aed', text:'#e4e4f0', chan:'#1a1a2e', input:'#13131f', fontFamily:0, fontSize:14, lineHeight:14, borderRadius:12, avatarRadius:50, sidebarWidth:200, glass:false, bgImg:false, bgUrl:'', bgBlur:0, sidebarOpacity:100, hideBoost:false, compact:false },
+  sakura: { bg:'#2d1b2e', sidebar:'#1f1020', accent:'#f472b6', text:'#fce7f3', chan:'#3d2840', input:'#2a1a2b', fontFamily:0, fontSize:14, lineHeight:15, borderRadius:16, avatarRadius:50, sidebarWidth:200, glass:false, bgImg:false, bgUrl:'', bgBlur:0, sidebarOpacity:100, hideBoost:true, compact:false },
+  hacker: { bg:'#000000', sidebar:'#041a00', accent:'#00ff41', text:'#00ff41', chan:'#001800', input:'#001200', fontFamily:1, fontSize:13, lineHeight:14, borderRadius:0, avatarRadius:0, sidebarWidth:200, glass:false, bgImg:false, bgUrl:'', bgBlur:0, sidebarOpacity:100, hideBoost:true, compact:true },
+  ocean: { bg:'#0a1628', sidebar:'#071020', accent:'#0ea5e9', text:'#bae6fd', chan:'#0d2040', input:'#0a1830', fontFamily:0, fontSize:14, lineHeight:14, borderRadius:10, avatarRadius:50, sidebarWidth:200, glass:false, bgImg:false, bgUrl:'', bgBlur:0, sidebarOpacity:100, hideBoost:false, compact:false },
+  sunset: { bg:'#1a0a14', sidebar:'#140810', accent:'#f97316', text:'#fed7aa', chan:'#2a1020', input:'#1e0c18', fontFamily:0, fontSize:14, lineHeight:14, borderRadius:8, avatarRadius:50, sidebarWidth:200, glass:false, bgImg:false, bgUrl:'', bgBlur:0, sidebarOpacity:100, hideBoost:false, compact:false },
+};
+
+function loadPreset(name) {
+  const p = PRESETS[name];
+  if (!p) return;
+  setVal('c-bg', p.bg); setVal('c-bg-hex', p.bg);
+  setVal('c-sidebar', p.sidebar); setVal('c-sidebar-hex', p.sidebar);
+  setVal('c-accent', p.accent); setVal('c-accent-hex', p.accent);
+  setVal('c-text', p.text); setVal('c-text-hex', p.text);
+  setVal('c-chan', p.chan); setVal('c-chan-hex', p.chan);
+  setVal('c-input', p.input); setVal('c-input-hex', p.input);
+  document.getElementById('font-family').selectedIndex = p.fontFamily;
+  setVal('font-size', p.fontSize); document.getElementById('font-size-val').textContent = p.fontSize+'px';
+  setVal('line-height', p.lineHeight); document.getElementById('line-height-val').textContent = (p.lineHeight/10).toFixed(1);
+  setVal('border-radius', p.borderRadius); document.getElementById('border-radius-val').textContent = p.borderRadius+'px';
+  setVal('avatar-radius', p.avatarRadius); document.getElementById('avatar-radius-val').textContent = p.avatarRadius+'%';
+  setVal('sidebar-width', p.sidebarWidth); document.getElementById('sidebar-width-val').textContent = p.sidebarWidth+'px';
+  document.getElementById('fx-glass').checked = p.glass;
+  document.getElementById('fx-bg-img').checked = p.bgImg;
+  document.getElementById('bg-url').value = p.bgUrl;
+  document.getElementById('bg-url-row').style.display = p.bgImg ? 'flex' : 'none';
+  setVal('bg-blur', p.bgBlur); document.getElementById('bg-blur-val').textContent = p.bgBlur+'px';
+  setVal('sidebar-opacity', p.sidebarOpacity); document.getElementById('sidebar-opacity-val').textContent = p.sidebarOpacity+'%';
+  document.getElementById('fx-hide-boost').checked = p.hideBoost;
+  document.getElementById('fx-compact').checked = p.compact;
+  updatePreview();
+  showToast('✦', 'Preset "'+name+'" loaded!');
+}
+
+function setVal(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.value = val;
+}
+
+// ── SYNC COLOR INPUTS ──
+function syncColor(input, hexId) {
+  document.getElementById(hexId).value = input.value;
+}
+function syncHex(input, colorId) {
+  const v = input.value;
+  if (/^#[0-9a-fA-F]{6}$/.test(v)) document.getElementById(colorId).value = v;
+}
+
+// ── SLIDER VALUES ──
+function updateSliderVal(input, valId, suffix='px', div=1) {
+  const raw = parseInt(input.value);
+  document.getElementById(valId).textContent = div > 1 ? (raw/div).toFixed(1) : raw+suffix;
+  if (id === 'fx-bg-img') document.getElementById('bg-url-row').style.display = input.checked ? 'flex' : 'none';
+}
+
+document.getElementById('fx-bg-img').addEventListener('change', function() {
+  document.getElementById('bg-url-row').style.display = this.checked ? 'flex' : 'none';
+  updatePreview();
+});
+
+// ── SECTION TOGGLE ──
+function toggleSection(header) {
+  header.classList.toggle('open');
+  const body = header.nextElementSibling;
+  body.classList.toggle('open');
+}
+
+// ── MAIN UPDATE FUNCTION ──
+function updatePreview() {
+  const bg = document.getElementById('c-bg').value;
+  const sidebar = document.getElementById('c-sidebar').value;
+  const accent = document.getElementById('c-accent').value;
+  const text = document.getElementById('c-text').value;
+  const chanActive = document.getElementById('c-chan').value;
+  const inputBg = document.getElementById('c-input').value;
+  const fontFamily = document.getElementById('font-family').value;
+  const fontSize = document.getElementById('font-size').value;
+  const lineHeight = (parseInt(document.getElementById('line-height').value)/10).toFixed(1);
+  const borderRadius = document.getElementById('border-radius').value;
+  const avatarRadius = document.getElementById('avatar-radius').value;
+  const sidebarWidth = document.getElementById('sidebar-width').value;
+  const glass = document.getElementById('fx-glass').checked;
+  const bgImg = document.getElementById('fx-bg-img').checked;
+  const bgUrl = document.getElementById('bg-url').value;
+  const bgBlur = document.getElementById('bg-blur').value;
+  const sidebarOpacity = document.getElementById('sidebar-opacity').value / 100;
+  const compact = document.getElementById('fx-compact').checked;
+
+  // Apply to mock
+  const mock = document.getElementById('discord-mock');
+  mock.style.fontSize = fontSize+'px';
+  mock.style.lineHeight = lineHeight;
+  mock.style.fontFamily = fontFamily;
+  mock.style.background = bg;
+  mock.style.color = text;
+
+  const dcSidebar = document.getElementById('dc-sidebar');
+  dcSidebar.style.background = glass
+    ? `rgba(${hexToRgb(sidebar)},${sidebarOpacity})`
+    : hexToRgba(sidebar, sidebarOpacity);
+  if (glass) { dcSidebar.style.backdropFilter = 'blur(20px)'; }
+  else { dcSidebar.style.backdropFilter = ''; }
+  dcSidebar.style.width = sidebarWidth+'px';
+  dcSidebar.style.minWidth = sidebarWidth+'px';
+
+  const dcGuilds = document.getElementById('dc-guilds');
+  dcGuilds.style.background = darken(sidebar, 0.15);
+
+  const serverHeader = document.getElementById('dc-server-header');
+  serverHeader.style.color = text;
+
+  const channels = document.getElementById('dc-channels');
+  channels.querySelectorAll('.dc-channel').forEach(ch => {
+    ch.style.color = text;
+  });
+
+  const activeChan = document.getElementById('dc-active-chan');
+  activeChan.style.background = chanActive;
+  activeChan.style.borderRadius = Math.min(parseInt(borderRadius),6)+'px';
+
+  const userBar = document.getElementById('dc-user-bar');
+  userBar.style.background = darken(sidebar, 0.2);
+
+  const avatar = document.getElementById('dc-avatar');
+  avatar.style.borderRadius = avatarRadius+'%';
+  avatar.style.background = accent;
+
+  const main = document.getElementById('dc-main');
+  main.style.background = bg;
+  if (bgImg && bgUrl) {
+    main.style.backgroundImage = `url(${bgUrl})`;
+    main.style.backgroundSize = 'cover';
+    main.style.backgroundPosition = 'center';
+  } else {
+    main.style.backgroundImage = '';
+  }
+
+  const chanHeader = document.getElementById('dc-channel-header');
+  chanHeader.style.background = glass ? `rgba(${hexToRgb(bg)},0.8)` : bg;
+  chanHeader.style.backdropFilter = bgBlur > 0 ? `blur(${bgBlur}px)` : '';
+  chanHeader.style.color = text;
+
+  const messages = document.getElementById('dc-messages');
+  messages.style.gap = compact ? '4px' : '12px';
+  messages.querySelectorAll('.dc-msg-text').forEach(m => {
+    const codeEls = m.querySelectorAll('code');
+    codeEls.forEach(c => { c.style.background = hexToRgba(accent, 0.15); });
+  });
+
+  const inputBox = document.getElementById('dc-input-box');
+  inputBox.style.background = inputBg;
+  inputBox.style.color = text;
+  inputBox.style.borderRadius = borderRadius+'px';
+
+  // Generate CSS
+  generateCSS({ bg, sidebar, accent, text, chanActive, inputBg, fontFamily, fontSize, lineHeight, borderRadius, avatarRadius, sidebarWidth, glass, bgImg, bgUrl, bgBlur, sidebarOpacity, compact });
+}
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `${r},${g},${b}`;
+}
+function hexToRgba(hex, alpha=1) {
+  return `rgba(${hexToRgb(hex)},${alpha})`;
+}
+function darken(hex, amount) {
+  let r = parseInt(hex.slice(1,3),16);
+  let g = parseInt(hex.slice(3,5),16);
+  let b = parseInt(hex.slice(5,7),16);
+  r = Math.max(0, Math.floor(r*(1-amount)));
+  g = Math.max(0, Math.floor(g*(1-amount)));
+  b = Math.max(0, Math.floor(b*(1-amount)));
+  return `rgb(${r},${g},${b})`;
+}
+
+// ── CSS GENERATOR ──
+function generateCSS(v) {
+  const lines = [
+    `/**`,
+    ` * VenTheme Export`,
+    ` * Generated: ${new Date().toLocaleDateString()}`,
+    ` * Import into: Vencord > Settings > Themes`,
+    ` */`,
+    ``,
+    `:root {`,
+    `  --background-primary: ${v.bg};`,
+    `  --background-secondary: ${v.sidebar};`,
+    `  --background-secondary-alt: ${darken(v.sidebar, 0.15)};`,
+    `  --background-tertiary: ${darken(v.sidebar, 0.25)};`,
+    `  --background-accent: ${v.chanActive};`,
+    `  --background-floating: ${v.inputBg};`,
+    `  --background-mobile-primary: ${v.bg};`,
+    `  --background-mobile-secondary: ${v.sidebar};`,
+    `  --channeltextarea-background: ${v.inputBg};`,
+    `  --text-normal: ${v.text};`,
+    `  --text-muted: ${hexToRgba(v.text, 0.5)};`,
+    `  --text-link: ${v.accent};`,
+    `  --brand-experiment: ${v.accent};`,
+    `  --brand-experiment-560: ${v.accent};`,
+    `  --interactive-normal: ${hexToRgba(v.text, 0.7)};`,
+    `  --interactive-hover: ${v.text};`,
+    `  --interactive-active: ${v.text};`,
+    `}`,
+    ``,
+    `/* ── Typography ── */`,
+    `* { font-family: ${v.fontFamily} !important; }`,
+    `.theme-dark { font-size: ${v.fontSize}px; line-height: ${v.lineHeight}; }`,
+    ``,
+    `/* ── Border Radius ── */`,
+    `.container_bd5d48, .sidebar_ded4b5 { border-radius: ${v.borderRadius}px; }`,
+    `.avatar_b37765 { border-radius: ${v.avatarRadius}% !important; }`,
+    `.message_d5deea { border-radius: ${Math.min(parseInt(v.borderRadius),8)}px; }`,
+    ``,
+    `/* ── Sidebar Width ── */`,
+    `.sidebar_ded4b5 { width: ${v.sidebarWidth}px !important; }`,
+  ];
+
+  if (v.glass) {
+    lines.push(``, `/* ── Glassmorphism ── */`);
+    lines.push(`.sidebar_ded4b5 { background: rgba(${hexToRgb(v.sidebar)},${v.sidebarOpacity}) !important; backdrop-filter: blur(20px) !important; }`);
+    lines.push(`.panels_a4d4d9 { background: rgba(${hexToRgb(v.sidebar)},${v.sidebarOpacity*0.9}) !important; backdrop-filter: blur(20px) !important; }`);
+  } else if (v.sidebarOpacity < 1) {
+    lines.push(``, `/* ── Sidebar Opacity ── */`);
+    lines.push(`.sidebar_ded4b5 { opacity: ${v.sidebarOpacity} !important; }`);
+  }
+
+  if (v.bgImg && v.bgUrl) {
+    lines.push(``, `/* ── Background Image ── */`);
+    lines.push(`.chat_a7d72e { background: url('${v.bgUrl}') center/cover !important; }`);
+    if (parseInt(v.bgBlur) > 0) {
+      lines.push(`.chat_a7d72e::before { content: ''; position: absolute; inset: 0; backdrop-filter: blur(${v.bgBlur}px); z-index: 0; }`);
+    }
+  }
+
+  if (v.compact) {
+    lines.push(``, `/* ── Compact Mode ── */`);
+    lines.push(`.message_d5deea { margin: 2px 0 !important; padding: 2px 16px !important; }`);
+    lines.push(`.avatar_b37765 { display: none !important; }`);
+  }
+
+  const css = lines.join('\n');
+  document.getElementById('css-output').value = css;
+  return css;
+}
+
+// ── MODAL ──
+function openModal() {
+  const css = document.getElementById('css-output').value;
+  document.getElementById('modal-css-preview').textContent = css;
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+// ── COPY ──
+function copyCSS() {
+  const css = document.getElementById('css-output').value;
+  navigator.clipboard.writeText(css).then(() => showToast('✓', 'CSS copied to clipboard!'));
+}
+
+// ── DOWNLOAD ──
+function downloadCSS() {
+  const css = document.getElementById('css-output').value;
+  const blob = new Blob([css], { type: 'text/css' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ventheme.css';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('↓', 'Downloaded ventheme.css!');
+  closeModal();
+}
+
+// ── TOAST ──
+function showToast(icon, msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-icon').textContent = icon;
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── INIT ──
+updatePreview();
+</script>
+</body>
+</html>
